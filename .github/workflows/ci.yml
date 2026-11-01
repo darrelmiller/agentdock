@@ -20,3 +20,10 @@ jobs:
         run: dotnet test .\PortfolioAgent.sln --configuration Release
       - name: Check whitespace
         run: git diff --check
+      - name: Package Agent Plugin
+        run: .\scripts\pack-plugin.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentdock-plugin
+          path: artifacts/plugins/*.zip
+          if-no-files-found: error

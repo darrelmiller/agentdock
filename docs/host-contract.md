@@ -84,6 +84,13 @@ the configured inference runtime; only approved content should be hosted.
 
 ## Verification and publication
 
+The host prompt instructs agents to check repository freshness before relying on content and
+permits `git pull --ff-only` when the working tree is clean and the current branch has an upstream.
+It does not authorize forced synchronization, branch switching, merges, rebases, or hiding local
+changes. Update blockers and failures must be reported. This is agent guidance, not an automatic
+host startup pull or an enforced sandbox. External service calls are not categorically prohibited
+by the host prompt; credentials and private data remain protected.
+
 The test suite covers registry persistence, ID/CLI validation, per-agent task isolation, HTTP+JSON
 streaming, progress events, cancellation, and optional personas. Tests do not claim full A2A
 conformance or validate every model/runtime capability. Real runtime checks require an authenticated

@@ -29,12 +29,15 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="A2A.AspNetCore" Version="1.0.0-preview3" />
     <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.28" />
-    <Content Include="..\..\.github\skills\agentdock-cli\SKILL.md"
+    <Content Include="..\..\skills\agentdock-cli\SKILL.md"
              Pack="false"
              Link="skills\agentdock-cli\SKILL.md"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />
+    <Content Include="..\..\plugin.json" Link="plugin.json"
+             Pack="false"
+             CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="..\..\LICENSE" Link="LICENSE"
              Pack="false"
              CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />

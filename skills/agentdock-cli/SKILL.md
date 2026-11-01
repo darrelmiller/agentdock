@@ -5,6 +5,9 @@ description: Host and manage local A2A agents with AgentDock, discover their car
 
 # AgentDock CLI
 
+This skill is distributed by the `agentdock` Agent Plugins 1.0 plugin. Loading the plugin
+does not install executables, start a host, or grant permission to invoke agents.
+
 AgentDock is a Spec-Works project currently incubated privately at
 `darrelmiller/agentdock` (formerly `darrelmiller/portfolioagent`). Do not assume an organisation
 transfer, public catalog listing, or public release exists. A NuGet tool packaging mechanism

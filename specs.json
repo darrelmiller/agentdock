@@ -1,6 +1,12 @@
 {
   "linkset": [
     {
+      "href": "https://agent-plugins.org/specification",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "Agent Plugins Specification 1.0.0"
+    },
+    {
       "href": "https://www.rfc-editor.org/rfc/rfc9264.html",
       "type": "text/html",
       "rel": "describedby",

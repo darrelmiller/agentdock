@@ -262,14 +262,20 @@ paths in public cards.
 
 ### Consumer skill
 
-[The AgentDock CLI skill](.github/skills/agentdock-cli/SKILL.md) teaches consumers how to acquire
+[The AgentDock CLI skill](skills/agentdock-cli/SKILL.md) teaches consumers how to acquire
 the `ai-catalog` and `a2a` CLIs, run and manage AgentDock, discover cards, and track tasks.
-Install it in a skill directory supported by your agent harness, for example:
+The repository root is an [Agent Plugins 1.0](https://agent-plugins.org/specification) plugin
+named `agentdock`, with a root `plugin.json` and a discoverable `skills/agentdock-cli/SKILL.md`.
+Install the repository or the generated plugin ZIP using a compatible client's plugin installer.
+See [plugin distribution and installation](docs/plugin.md). Installation syntax is client-specific;
+the standard does not define a universal install command.
+
+Alternatively, install just the skill in a directory supported by your agent harness:
 
 ```powershell
 $destination = Join-Path $HOME ".agents\skills\agentdock-cli"
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
-Copy-Item ".github\skills\agentdock-cli\SKILL.md" (Join-Path $destination "SKILL.md")
+Copy-Item "skills\agentdock-cli\SKILL.md" (Join-Path $destination "SKILL.md")
 ```
 
 Use your harness's documented skill root if different. The skill does not install executables
@@ -290,6 +296,10 @@ automatically. Publishing also copies it alongside the executable as
   access by other processes running on the same machine.
 - Responses should cite repository-relative source paths and distinguish current facts from dated
   or exploratory material.
+- Agents are instructed to check repository freshness and use `git pull --ff-only` on a clean
+  branch with a configured upstream. Local changes, divergence, missing upstream, and update
+  failures must be reported rather than bypassed. External service calls are not categorically
+  prohibited by the host prompt; credential and private-data protections still apply.
 - One Copilot session is shared by all work for each agent workspace, regardless of the caller's A2A
   context ID. Turns are serialized. Different callers share history; this is not caller isolation.
 - Different agents have independent sessions, turn gates, and task stores, and can work concurrently.

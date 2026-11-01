@@ -23,7 +23,7 @@ $archive = [System.IO.Compression.ZipFile]::OpenRead($package)
 try {
     $prefix = "tools/any/$rid/"
     foreach ($required in @(
-        'AgentDock.exe', 'AgentDock.runtimeconfig.json', 'LICENSE', 'specs.json',
+        'AgentDock.exe', 'AgentDock.runtimeconfig.json', 'LICENSE', 'specs.json', 'plugin.json',
         'skills/agentdock-cli/SKILL.md',
         "runtimes/$rid/native/copilot.exe",
         "runtimes/$rid/native/copilot-runtime.exe",

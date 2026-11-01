@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "agentdock",
+  "version": "0.2.0",
+  "description": "Install and operate AgentDock workspace-backed A2A agents, discover them through AI Catalog, and delegate tracked work.",
+  "author": {
+    "name": "Darrel Miller",
+    "url": "https://github.com/darrelmiller"
+  },
+  "homepage": "https://github.com/darrelmiller/agentdock",
+  "repository": "https://github.com/darrelmiller/agentdock",
+  "license": "MIT",
+  "keywords": ["agentdock", "a2a", "ai-catalog", "copilot", "spec-works"]
+}
