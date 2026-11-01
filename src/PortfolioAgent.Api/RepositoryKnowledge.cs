@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace PortfolioAgent.Api;
@@ -42,11 +43,51 @@ public sealed class RepositoryKnowledge
 
         if (!File.Exists(Path.Combine(_rootPath, ".git")) && !Directory.Exists(Path.Combine(_rootPath, ".git")))
         {
-            throw new InvalidOperationException($"Configured path is not a Git repository: {_rootPath}");
+            throw new InvalidOperationException($"Configured path is not a supported workspace: {_rootPath}");
         }
     }
 
     public string RootPath => _rootPath;
+
+    public RepositoryIdentity Identity
+    {
+        get
+        {
+            var fallback = ReadmeIdentity;
+            var profilePath = Path.Combine(_rootPath, ".agent", "agent-profile.json");
+            if (!File.Exists(profilePath))
+            {
+                return fallback;
+            }
+
+            var profile = JsonSerializer.Deserialize<AgentProfile>(File.ReadAllText(profilePath), new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? throw new InvalidOperationException($"Agent profile is empty: {profilePath}");
+
+            return new RepositoryIdentity(
+                string.IsNullOrWhiteSpace(profile.Name) ? fallback.Name : profile.Name.Trim(),
+                string.IsNullOrWhiteSpace(profile.Description) ? fallback.Description : profile.Description.Trim());
+        }
+    }
+
+    private RepositoryIdentity ReadmeIdentity
+    {
+        get
+        {
+            var readmePath = Path.Combine(_rootPath, "README.md");
+            if (!File.Exists(readmePath))
+            {
+                return new RepositoryIdentity("Agent", "An agentic assistant grounded in configured workspace content.");
+            }
+
+            var readme = File.ReadAllText(readmePath);
+            var heading = Regex.Match(readme, @"(?m)^#\s+(.+?)\s*#*\s*$");
+            var name = heading.Success ? heading.Groups[1].Value.Trim() : "Agent";
+            var description = FindReadmeDescription(readme, heading);
+            return new RepositoryIdentity(name, description ?? "An agentic assistant grounded in configured workspace content.");
+        }
+    }
 
     public List<string> SkillDirectories
     {
@@ -107,7 +148,7 @@ public sealed class RepositoryKnowledge
 
         if (selected.Length == 0)
         {
-            return "No repository documents matched the question. The configured repository contains "
+            return "No workspace documents matched the question. The configured workspace contains "
                 + $"{documents.Length} readable text files.";
         }
 
@@ -229,6 +270,40 @@ public sealed class RepositoryKnowledge
         return skillDirectory;
     }
 
+    private static string? FindReadmeDescription(string readme, Match heading)
+    {
+        if (!heading.Success)
+        {
+            return null;
+        }
+
+        var afterHeading = readme[(heading.Index + heading.Length)..];
+        foreach (var paragraph in Regex.Split(afterHeading, @"\r?\n\s*\r?\n"))
+        {
+            var text = paragraph.Trim();
+            if (text.Length == 0 || text[0] == '#' || text.StartsWith("![", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (text[0] == '<' || text.StartsWith("```", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            text = Regex.Replace(text, @"\[([^\]]+)\]\([^)]+\)", "$1");
+            text = Regex.Replace(text, @"[*_`~]", string.Empty).Trim();
+            if (text.Length > 300)
+            {
+                text = text[..297].TrimEnd() + "...";
+            }
+
+            return text;
+        }
+
+        return null;
+    }
+
     private static bool IsRepositoryGuide(string path)
     {
         var fileName = Path.GetFileName(path);
@@ -316,4 +391,5 @@ public sealed class RepositoryKnowledge
     }
 
     private sealed record Document(string Path, string Content);
+    private sealed record AgentProfile(string? Name, string? Description);
 }

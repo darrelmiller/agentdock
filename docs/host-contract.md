@@ -1,0 +1,99 @@
+# AgentDock host contract
+
+AgentDock is a Spec-Works project providing an agent host over workspace knowledge, skills,
+instructions, and the GitHub Copilot SDK. This document describes the current 0.2 implementation,
+not an independent replacement for the underlying protocol specifications.
+
+## Specification boundaries
+
+[A2A 1.0](https://a2a-protocol.org/v1.0.0/specification/) defines agent cards, messages, tasks,
+artifacts, and streaming. [AI Catalog](https://ai-catalog.io/spec/) defines the discovery document.
+[Agent Skills](https://agentskills.io/specification) defines workspace skill artifacts.
+[specs.json](../specs.json) is the project's specification linkset.
+
+AgentDock-specific contracts are registration, runtime ownership, workspace binding, and
+receiving-session continuity. Git is the current workspace provider, not the public agent identity.
+
+## Registration and host lifetime
+
+`AgentDock serve` restores the persisted registry or initializes an empty one. An optional workspace
+argument seeds a new registry only. The process runs in the foreground; no OS service is installed.
+
+`start <workspace> [--id <id>] [--persona <name>]`, `list`, and `stop <id>` control the running host
+through a same-user named pipe. Registrations persist independently of process lifetime.
+The workspace basename supplies a default lowercase hyphen-separated ID. Duplicate IDs or workspace
+paths are rejected. Explicit IDs contain 1-64 lowercase ASCII letters/digits separated by single
+hyphens. A persona name is optional and selects a native SDK custom agent; availability is checked
+before inference on first work. Missing personas fail explicitly.
+
+`stop` cancels and joins outstanding A2A work, unregisters the agent, and disposes its session.
+It does not delete workspace files or saved session state. Restart does not restore removed
+registrations. Failed registrations are visible to management but excluded from the public catalog.
+
+## Discovery and transport
+
+| Surface | Contract |
+|---|---|
+| `GET /catalog` | Live `application/ai-catalog+json` listing ready agents |
+| `GET /agents/{id}` | Direct agent card |
+| `GET /agents/{id}/.well-known/agent-card.json` | Agent card discovery |
+| `/agents/{id}` | Preferred HTTP+JSON A2A binding, including SSE |
+| `/agents/{id}/a2a` | JSON-RPC compatibility binding |
+| `GET /healthz` | Host responsiveness, not inference or persona readiness |
+
+Catalog entries point to agent cards using `application/a2a-agent-card+json`. Identifiers include
+the persisted host identity and agent ID. Cards take descriptive identity from workspace
+`.agent/agent-profile.json`, then README fallback. Descriptive identity, registration ID, selected
+persona, and session ID are distinct.
+
+Root A2A aliases exist only when an initial workspace is explicitly provided to `serve`.
+Without one, callers discover through the catalog; no default is inferred from list order.
+
+## Message, task, and session semantics
+
+Each work message creates a tracked task, or continues an addressed nonterminal task. Task stores
+are isolated per agent. A caller context ID is a correlation handle, not a receiving-session
+selector. A completed-task revision is new work, not a continuation of a terminal task.
+
+Execution emits Submitted, Working, public assistant updates as Working status messages, a final
+result artifact, and Completed. Completion means execution finished, not caller acceptance.
+Reasoning and raw tool data are not forwarded. Token-by-token artifact deltas and interactive
+input/approval bridging are not implemented.
+
+Each agent owns one receiving Copilot session with serialized turns. Separate agents can run
+concurrently on a single host-owned runtime. The runtime starts lazily on first work or explicit
+`/new-session`; registration starts no Copilot process. Calls target the agent's session object,
+not a process-wide current-session selector. Persona selection is session-scoped and reapplied
+before work and rotation.
+
+`/new-session` explicitly creates fresh continuity and returns a Message. Empty requests also
+return Messages. Session IDs persist and are resumed; resume failures do not silently create new
+conversations. A2A task records are currently in-memory and do not survive restart or unregistering.
+Loaded sessions have no idle eviction; shared-runtime failure affects all hosted agents.
+
+## Trust boundary
+
+The server binds to loopback. A2A is unauthenticated and editing/command permissions are automatically
+approved under the host account. Agent/session separation is not an OS sandbox. All callers of
+one agent share its history. Use only trusted local callers and workspaces.
+
+Optional allowed roots restrict registration. Paths through junctions/symlinks are rejected.
+Repository MCP/hook auto-discovery is disabled. Selecting a persona does not grant access to app
+conversation history, private memory, or external services. Retrieved workspace material goes to
+the configured inference runtime; only approved content should be hosted.
+
+## Verification and publication
+
+The test suite covers registry persistence, ID/CLI validation, per-agent task isolation, HTTP+JSON
+streaming, progress events, cancellation, and optional personas. Tests do not claim full A2A
+conformance or validate every model/runtime capability. Real runtime checks require an authenticated
+Copilot account and disposable workspaces; normal CI does not invoke inference.
+
+The source repository currently remains private at
+[darrelmiller/agentdock](https://github.com/darrelmiller/agentdock). Spec-Works affiliation
+does not imply a published registry entry, public release, or ownership transfer.
+
+[NuGet-tool packaging](nuget-tool.md) builds `SpecWorks.AgentDock.Cli` with command `agentdock`,
+using self-contained Windows x64/ARM64 packages and a .NET 10 manifest. Disposable installation,
+runtime handshake, and host HTTP checks gate the manually requested publication job. The
+mechanism does not establish a NuGet.org release or expand supported platforms beyond Windows.

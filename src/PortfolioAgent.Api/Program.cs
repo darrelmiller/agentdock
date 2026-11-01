@@ -3,69 +3,65 @@ using A2A;
 using A2A.AspNetCore;
 using PortfolioAgent.Api;
 
-var builder = WebApplication.CreateBuilder(args);
-var repositoryRoot = builder.Configuration["Repository:Path"]
-    ?? Environment.GetEnvironmentVariable("REPOSITORY_AGENT_REPOSITORY_ROOT")
-    ?? Environment.GetEnvironmentVariable("PORTFOLIO_AGENT_REPOSITORY_ROOT");
-
-if (string.IsNullOrWhiteSpace(repositoryRoot))
+if (args is ["--help"] or ["-h"] or ["help"])
 {
-    throw new InvalidOperationException(
-        "Set REPOSITORY_AGENT_REPOSITORY_ROOT to the Git repository the agent should use.");
+    Console.WriteLine(AgentAdmin.Usage);
+    return;
+}
+if (args is ["--version"])
+{
+    Console.WriteLine($"AgentDock {typeof(AgentAdmin).Assembly.GetName().Version?.ToString(3)}");
+    return;
 }
 
-var repository = new RepositoryKnowledge(repositoryRoot);
-var portValue = builder.Configuration["REPOSITORY_AGENT_PORT"]
-    ?? Environment.GetEnvironmentVariable("REPOSITORY_AGENT_PORT")
-    ?? Environment.GetEnvironmentVariable("PORTFOLIO_AGENT_PORT")
-    ?? "5080";
-
+var portValue = Environment.GetEnvironmentVariable("REPOSITORY_AGENT_PORT") ?? "5080";
 if (!int.TryParse(portValue, out var port) || port is < 1 or > 65535)
 {
     throw new InvalidOperationException("REPOSITORY_AGENT_PORT must be a valid TCP port.");
 }
+var pipeName = AgentAdmin.PipeName(port);
+if (args.Length > 0 && args[0] is "start" or "stop" or "list")
+{
+    Environment.ExitCode = await AgentAdmin.RunCommandAsync(args, pipeName);
+    return;
+}
+
+var workspaceArgument = args switch
+{
+    ["serve"] => null,
+    ["serve", var path] => path,
+    [var path] when path != "serve" => path,
+    _ => throw new InvalidOperationException(AgentAdmin.Usage)
+};
+if (workspaceArgument is not null && string.IsNullOrWhiteSpace(workspaceArgument))
+{
+    throw new InvalidOperationException(AgentAdmin.Usage);
+}
+var initialWorkspace = workspaceArgument is null ? null
+    : Path.TrimEndingDirectorySeparator(Path.GetFullPath(workspaceArgument));
+var builder = WebApplication.CreateBuilder([]);
+var baseUrl = $"http://127.0.0.1:{port}";
+var stateDirectory = builder.Configuration["REPOAGENT_STATE_DIRECTORY"]
+    ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "AgentDock", "hosts", $"port-{port}");
+stateDirectory = Path.GetFullPath(stateDirectory);
+var allowedRoots = builder.Configuration["REPOAGENT_ALLOWED_ROOTS"]?.Split(
+    ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
 builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, port));
-builder.Services.AddSingleton(repository);
-builder.Services.AddSingleton<CopilotAgentService>();
-builder.Services.AddHostedService(provider => provider.GetRequiredService<CopilotAgentService>());
-builder.Services.AddA2AAgent<RepositoryAgentHandler>(CreateAgentCard(port));
-
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<SharedCopilotRuntime>();
+builder.Services.AddSingleton(provider => new AgentRegistry(
+    initialWorkspace, stateDirectory, allowedRoots, baseUrl,
+    (registration, knowledge) => new CopilotAgentService(knowledge, builder.Configuration,
+        provider.GetRequiredService<ILoggerFactory>().CreateLogger<CopilotAgentService>(),
+        registration.Id, stateDirectory, provider.GetRequiredService<SharedCopilotRuntime>(), registration.Persona),
+    provider.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddHostedService(provider => provider.GetRequiredService<AgentRegistry>());
+builder.Services.AddHostedService(provider => new AgentAdmin(
+    provider.GetRequiredService<AgentRegistry>(), pipeName, provider.GetRequiredService<ILogger<AgentAdmin>>()));
 var app = builder.Build();
-
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
-app.MapWellKnownAgentCard(CreateAgentCard(port));
-app.MapA2A("/a2a");
-
+AgentEndpoints.Map(app, initialWorkspace);
 app.Run();
 
-static AgentCard CreateAgentCard(int port) => new()
-{
-    Name = "Repository Agent",
-    Description = "Works with the configured Git repository, following its instructions, skills, and knowledge.",
-    Version = "0.1.0",
-    SupportedInterfaces =
-    [
-        new AgentInterface
-        {
-            Url = $"http://127.0.0.1:{port}/a2a",
-            ProtocolBinding = "JSONRPC",
-            ProtocolVersion = "1.0"
-        }
-    ],
-    Capabilities = new AgentCapabilities { Streaming = false },
-    DefaultInputModes = ["text/plain"],
-    DefaultOutputModes = ["text/plain"],
-    Skills =
-    [
-        new AgentSkill
-        {
-            Id = "repository-agent",
-            Name = "Repository agent",
-            Description = "Answers questions and performs requested work using the configured repository.",
-            Tags = ["repository", "coding", "knowledge", "skills"],
-            InputModes = ["text/plain"],
-            OutputModes = ["text/plain"]
-        }
-    ]
-};
+public partial class Program;

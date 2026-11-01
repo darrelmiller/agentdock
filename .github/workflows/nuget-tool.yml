@@ -1,0 +1,92 @@
+name: NuGet tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (for example 0.2.0 or 0.2.0-preview.1)'
+        required: true
+        type: string
+      publish:
+        description: 'Publish verified packages to NuGet.org'
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate version
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:PACKAGE_VERSION -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            throw 'Use a three-component NuGet version with an optional prerelease suffix.'
+          }
+      - name: Test
+        run: dotnet test .\PortfolioAgent.sln --configuration Release
+      - name: Pack Windows tools
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj --configuration Release -p:Version=$env:PACKAGE_VERSION --output .\artifacts\packages
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-tool
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  verify:
+    needs: pack
+    strategy:
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-tool
+          path: artifacts/packages
+      - name: Install and run matching tool
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: .\scripts\verify-tool.ps1 -PackageDirectory .\artifacts\packages -Version $env:PACKAGE_VERSION
+
+  publish:
+    if: ${{ inputs.publish }}
+    needs: [pack, verify]
+    runs-on: windows-latest
+    environment: nuget
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-tool
+          path: artifacts/packages
+      - name: Publish RID packages before the manifest
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            throw 'Configure NUGET_API_KEY in the protected nuget environment.'
+          }
+          foreach ($id in @('SpecWorks.AgentDock.Cli.win-x64', 'SpecWorks.AgentDock.Cli.win-arm64', 'SpecWorks.AgentDock.Cli')) {
+            $package = ".\artifacts\packages\$id.$env:PACKAGE_VERSION.nupkg"
+            dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { throw "Publishing $id failed ($LASTEXITCODE)." }
+          }

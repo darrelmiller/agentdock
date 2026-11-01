@@ -55,6 +55,42 @@ public sealed class RepositoryKnowledgeTests : IDisposable
     }
 
     [Fact]
+    public void Identity_UsesReadmeHeadingAndOpeningDescription()
+    {
+        CreateFile(
+            "README.md",
+            "# Acme API\n\nA small API for managing useful things.\n\n## Details\nMore information.\n");
+
+        var identity = new RepositoryKnowledge(_root).Identity;
+
+        Assert.Equal("Acme API", identity.Name);
+        Assert.Equal("A small API for managing useful things.", identity.Description);
+    }
+
+    [Fact]
+    public void Identity_FallsBackToGenericAgentNameWhenReadmeIsMissing()
+    {
+        var identity = new RepositoryKnowledge(_root).Identity;
+
+        Assert.Equal("Agent", identity.Name);
+        Assert.Equal("An agentic assistant grounded in configured workspace content.", identity.Description);
+    }
+
+    [Fact]
+    public void Identity_PrefersAgentProfileOverReadme()
+    {
+        CreateFile("README.md", "# README Name\n\nREADME description.\n");
+        CreateFile(
+            ".agent/agent-profile.json",
+            """{"name":"Configured Agent","description":"Uses curated portfolio knowledge."}""");
+
+        var identity = new RepositoryKnowledge(_root).Identity;
+
+        Assert.Equal("Configured Agent", identity.Name);
+        Assert.Equal("Uses curated portfolio knowledge.", identity.Description);
+    }
+
+    [Fact]
     public void Constructor_RejectsDirectoriesThatAreNotGitRepositories()
     {
         var nonRepository = Path.Combine(Path.GetTempPath(), $"not-a-repository-{Guid.NewGuid():N}");

@@ -1,0 +1,40 @@
+{
+  "linkset": [
+    {
+      "href": "https://www.rfc-editor.org/rfc/rfc9264.html",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "Linkset - RFC 9264"
+    },
+    {
+      "href": "https://a2a-protocol.org/v1.0.0/specification/",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "Agent2Agent Protocol 1.0"
+    },
+    {
+      "href": "https://ai-catalog.io/spec/",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "AI Catalog Specification"
+    },
+    {
+      "href": "https://agentskills.io/specification",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "Agent Skills Specification"
+    },
+    {
+      "href": "https://github.com/darrelmiller/agentdock/blob/main/docs/host-contract.md",
+      "type": "text/html",
+      "rel": "describedby",
+      "title": "AgentDock Host Contract"
+    },
+    {
+      "href": "https://github.com/github/copilot-sdk",
+      "type": "text/html",
+      "rel": "related",
+      "title": "GitHub Copilot SDK"
+    }
+  ]
+}

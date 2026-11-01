@@ -4,11 +4,43 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AgentDock</AssemblyName>
+    <Version>0.2.0</Version>
+    <Product>AgentDock</Product>
+    <Description>Spec-Works workspace-grounded A2A agent host with AI Catalog discovery.</Description>
+    <RepositoryUrl>https://github.com/darrelmiller/agentdock</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackAsTool>true</PackAsTool>
+    <IsPackable>true</IsPackable>
+    <ToolCommandName>agentdock</ToolCommandName>
+    <PackageId>SpecWorks.AgentDock.Cli</PackageId>
+    <Authors>Darrel Miller</Authors>
+    <PackageProjectUrl>https://github.com/darrelmiller/agentdock</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageTags>spec-works;a2a;ai-catalog;agents;copilot</PackageTags>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishSelfContained>true</PublishSelfContained>
+    <PackageOutputPath>$(MSBuildProjectDirectory)\..\..\artifacts\packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="A2A.AspNetCore" Version="1.0.0-preview3" />
     <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.28" />
+    <Content Include="..\..\.github\skills\agentdock-cli\SKILL.md"
+             Pack="false"
+             Link="skills\agentdock-cli\SKILL.md"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             ExcludeFromSingleFile="true" />
+    <Content Include="..\..\LICENSE" Link="LICENSE"
+             Pack="false"
+             CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\..\specs.json" Link="specs.json"
+             Pack="false"
+             CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
 </Project>
