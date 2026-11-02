@@ -39,7 +39,8 @@ try {
     $archive.Dispose()
 }
 
-$toolDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "repo-agent-host-tool-$([Guid]::NewGuid().ToString('N'))"
+# Keep the nested NuGet runtime executable path below Windows process-launch path limits.
+$toolDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "rah-$([Guid]::NewGuid().ToString('N').Substring(0, 16))"
 New-Item -ItemType Directory -Path $toolDirectory | Out-Null
 try {
     & $DotNetExecutable tool install SpecWorks.RepoAgentHost.Cli --version $Version --tool-path $toolDirectory `
