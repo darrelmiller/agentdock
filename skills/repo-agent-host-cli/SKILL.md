@@ -1,24 +1,24 @@
 ---
-name: agentdock-cli
-description: Host and manage local A2A agents with AgentDock, discover their cards through AI Catalog, and delegate tracked work using a2a. Includes acquiring AgentDock, ai-catalog, and a2a executables. Use for starting or stopping hosted agents, registering knowledge workspaces, discovering local agents, or sending work to AgentDock.
+name: repo-agent-host-cli
+description: Host and manage local A2A agents with RepoAgentHost, discover their cards through AI Catalog, and delegate tracked work using a2a. Includes acquiring RepoAgentHost, ai-catalog, and a2a executables. Use for starting or stopping hosted agents, registering knowledge workspaces, discovering local agents, or sending work to RepoAgentHost.
 ---
 
-# AgentDock CLI
+# RepoAgentHost CLI
 
-This skill is distributed by the `agentdock` Agent Plugins 1.0 plugin. Loading the plugin
+This skill is distributed by the `repo-agent-host` Agent Plugins 1.0 plugin. Loading the plugin
 does not install executables, start a host, or grant permission to invoke agents.
 
-AgentDock is a Spec-Works project currently incubated privately at
-`darrelmiller/agentdock` (formerly `darrelmiller/portfolioagent`). Do not assume an organisation
+RepoAgentHost is a Spec-Works project at the public repository
+`darrelmiller/RepoAgentHost` (formerly `darrelmiller/portfolioagent`). Do not assume an organisation
 transfer, public catalog listing, or public release exists. A NuGet tool packaging mechanism
 exists, but no NuGet.org publication is established. Source and binary distributions use MIT.
 
-AgentDock hosts agents whose workspaces supply knowledge, instructions, skills, and public
+RepoAgentHost hosts agents whose workspaces supply knowledge, instructions, skills, and public
 identity. The backing storage is not part of the public agent interface.
 
 | Tool | Responsibility |
 |---|---|
-| `AgentDock` | Run the host and start, list, or stop its agents |
+| `rahcli` | Run the host and start, list, or stop its agents |
 | `ai-catalog` | Discover agents and obtain their card URLs |
 | `a2a` | Inspect cards, send messages, and fetch or cancel tracked tasks |
 
@@ -27,9 +27,9 @@ identity. The backing storage is not part of the public agent interface.
 Check existing installations first. Install/upgrade only with the user's permission, using their
 approved package manager or release-download method. These instructions are not standing consent.
 
-### AgentDock
+### RepoAgentHost
 
-The .NET tool package is `SpecWorks.AgentDock.Cli`; its command is `agentdock`.
+The .NET tool package is `SpecWorks.RepoAgentHost.Cli`; its command is `rahcli`.
 Installation requires .NET SDK 10 or later. Initial RID packages support Windows x64 and ARM64
 and include the .NET/ASP.NET and Copilot runtimes. Install the manifest package, not its
 `.win-x64`/`.win-arm64` implementation packages. Do not assume it is published to NuGet.org.
@@ -37,21 +37,21 @@ and include the .NET/ASP.NET and Copilot runtimes. Install the manifest package,
 If the user supplies a local feed containing all three matching packages:
 
 ```powershell
-dotnet tool install --global SpecWorks.AgentDock.Cli --version <approved-version> `
+dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version <approved-version> `
   --add-source <approved-package-directory>
-agentdock --version
+rahcli --version
 ```
 
 After confirming a public version exists, the approved public-feed installation is:
 
 ```powershell
-dotnet tool install --global SpecWorks.AgentDock.Cli --version <approved-version>
+dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version <approved-version>
 ```
 
 Stop the foreground host before `dotnet tool update`; do not overwrite a running installation.
 Package installation is not account authentication or permission to start inference.
 
-Use a supplied executable or build from an authorized checkout of `darrelmiller/agentdock`.
+Use a supplied executable or build from an authorized checkout of `darrelmiller/RepoAgentHost`.
 Do not assume a public release exists. From that checkout:
 
 ```powershell
@@ -59,7 +59,7 @@ dotnet publish .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj `
   -c Release -r win-arm64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true `
   -o .\publish\win-arm64
-.\publish\win-arm64\AgentDock.exe list
+.\publish\win-arm64\rahcli.exe list
 ```
 
 Building requires the .NET 10 SDK; the self-contained executable needs no separate .NET runtime.
@@ -67,7 +67,7 @@ Choose the destination RID, for example `win-x64`, rather than assuming Windows 
 Agent execution requires an authenticated GitHub Copilot runtime and appropriate subscription.
 Report authentication failures; do not pass tokens in CLI arguments or workspace files.
 
-Use the full executable path or the user's normal PATH setup. Examples below assume `AgentDock`
+Use the full executable path or the user's normal PATH setup. Examples below assume `rahcli`
 resolves to the supplied binary.
 
 ### AI Catalog CLI: `ai-catalog`
@@ -128,11 +128,11 @@ unrelated A2A client or invent flags when a command fails.
 Start a normal foreground host in one terminal:
 
 ```powershell
-AgentDock serve
+rahcli serve
 ```
 
 `serve` restores saved registrations, or starts with an empty catalog on first run. An optional
-`AgentDock serve "C:\agents\portfolio"` seeds a new registry. The single-path form remains an
+`rahcli serve "C:\agents\portfolio"` seeds a new registry. The single-path form remains an
 alias for that seeded form. Subsequent starts reload saved registrations without resurrecting
 agents previously stopped. With no initial path there is no root/default A2A agent: discover through
 `/catalog` and use `/agents/{id}`; never assume the first catalog entry is a default agent.
@@ -145,11 +145,11 @@ agent harness, use its supported long-lived process/terminal mechanism and verif
 In another terminal:
 
 ```powershell
-AgentDock start "C:\agents\ai-catalog"
-AgentDock start "C:\other\portfolio" --id another-portfolio
-AgentDock start "C:\agents\assistant" --id assistant --persona margo
-AgentDock list
-AgentDock stop another-portfolio
+rahcli start "C:\agents\ai-catalog"
+rahcli start "C:\other\portfolio" --id another-portfolio
+rahcli start "C:\agents\assistant" --id assistant --persona margo
+rahcli list
+rahcli stop another-portfolio
 ```
 
 `start` registers/starts an agent in an **already running host**, not a new process or OS service.
@@ -157,7 +157,7 @@ AgentDock stop another-portfolio
 It does not delete the workspace or saved session. Obtain specific approval before stopping an
 agent that may have active work. Re-registering the same ID and workspace resumes its session.
 
-Registration starts no Copilot process and loads no session. AgentDock lazily starts **one shared
+Registration starts no Copilot process and loads no session. RepoAgentHost lazily starts **one shared
 Copilot runtime** on first work (or `/new-session`), then creates/resumes distinct per-agent sessions.
 Each request targets its agent's session object with that workspace's configuration; the runtime has
 no global "current agent" to switch. Different agents can work concurrently without sharing history.
@@ -205,7 +205,7 @@ Set configuration before starting the host:
 ```powershell
 $env:REPOSITORY_AGENT_PORT = "5081"
 $env:REPOAGENT_ALLOWED_ROOTS = "C:\agents;D:\knowledge"
-AgentDock serve
+rahcli serve
 ```
 
 Set the same port in the control-command terminal. Current workspaces must be local Git
@@ -214,9 +214,9 @@ repositories; URL cloning is not implemented. Paths through junctions/symbolic l
 ## Discover agents through AI Catalog
 
 ```powershell
-ai-catalog catalog add agentdock-local http://127.0.0.1:5080/catalog
+ai-catalog catalog add repo-agent-host-local http://127.0.0.1:5080/catalog
 ai-catalog search portfolio --json
-ai-catalog catalog update agentdock-local
+ai-catalog catalog update repo-agent-host-local
 ```
 
 Catalog clients cache documents; refresh after starting/stopping agents. If the name is already
@@ -227,7 +227,7 @@ Entries have a stable `identifier` URN including host identity and agent ID, typ
 Get the actual identifier from search; do not invent it from the folder name.
 
 ```powershell
-ai-catalog show "<identifier-from-search>" --scope agentdock-local --json
+ai-catalog show "<identifier-from-search>" --scope repo-agent-host-local --json
 ```
 
 Pass the entry's `url` to `a2a card get`. Cards live at
@@ -238,7 +238,7 @@ interfaces over constructing URLs. **HTTP+JSON is the preferred binding**; the A
 The friendly `/agents/{id}` URL also serves the card for clients that interpret a URL with a path
 as a direct card URL rather than appending the well-known discovery path.
 
-AgentDock deliberately uses loopback HTTP. Some catalog clients restrict pulling HTTP artifacts:
+RepoAgentHost deliberately uses loopback HTTP. Some catalog clients restrict pulling HTTP artifacts:
 report a policy rejection and use the A2A client's supported discovery operation for this trusted
 local endpoint. Never disable transport security for a remote service to force a pull.
 

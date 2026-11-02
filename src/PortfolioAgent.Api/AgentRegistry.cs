@@ -118,7 +118,7 @@ public sealed class AgentRegistry : IHostedService, IAsyncDisposable
     public object Catalog() => new
     {
         specVersion = "1.0",
-        host = new { identifier = $"urn:agentdock:host:{_hostId}", displayName = "AgentDock" },
+        host = new { identifier = $"urn:agentdock:host:{_hostId}", displayName = "RepoAgentHost" },
         entries = _agents.Values.Where(a => a.Status == "ready").OrderBy(a => a.Registration.Id)
             .Select(a => new
             {

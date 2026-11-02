@@ -1,6 +1,6 @@
-# Contributing to AgentDock
+# Contributing to RepoAgentHost
 
-AgentDock is a Spec-Works project, currently incubated privately under `darrelmiller`.
+RepoAgentHost is a Spec-Works project, currently hosted publicly under `darrelmiller`.
 Repository access, public release, and organisation transfer are separate decisions.
 
 ## Specification-first changes

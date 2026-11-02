@@ -142,9 +142,9 @@ public sealed class CopilotAgentService : IHostedAgentRuntime
         {
             ObjectDisposedException.ThrowIf(_stopped, this);
             var client = await _runtime.GetClientAsync(cancellationToken);
-            var id = $"agentdock-{Guid.NewGuid():N}";
+            var id = $"repo-agent-host-{Guid.NewGuid():N}";
             var session = await client.CreateSessionAsync(
-                Configure(new SessionConfig { SessionId = id, Name = $"AgentDock {id}" }), cancellationToken);
+                Configure(new SessionConfig { SessionId = id, Name = $"RepoAgentHost {id}" }), cancellationToken);
             try
             {
                 await SelectPersonaAsync(session, cancellationToken);
@@ -191,9 +191,9 @@ public sealed class CopilotAgentService : IHostedAgentRuntime
                 }
                 else
                 {
-                    _sessionId = $"agentdock-{Guid.NewGuid():N}";
+                    _sessionId = $"repo-agent-host-{Guid.NewGuid():N}";
                     var session = await client.CreateSessionAsync(
-                        Configure(new SessionConfig { SessionId = _sessionId, Name = $"AgentDock {_sessionId}" }), cancellationToken);
+                        Configure(new SessionConfig { SessionId = _sessionId, Name = $"RepoAgentHost {_sessionId}" }), cancellationToken);
                     try
                     {
                         await SelectPersonaAsync(session, cancellationToken);

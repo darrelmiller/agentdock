@@ -10,10 +10,10 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     public const string Usage = """
         Usage:
-          AgentDock serve [initial-workspace-path]
-          AgentDock start <workspace-path> [--id <friendly-id>] [--persona <custom-agent-name>]
-          AgentDock stop <friendly-id>
-          AgentDock list
+          rahcli serve [initial-workspace-path]
+          rahcli start <workspace-path> [--id <friendly-id>] [--persona <custom-agent-name>]
+          rahcli stop <friendly-id>
+          rahcli list
         'serve' runs a normal foreground host; Ctrl+C shuts it down. Other commands control that
         running host for the current user and REPOSITORY_AGENT_PORT (default 5080).
         A single workspace argument remains supported as an alias for 'serve'.

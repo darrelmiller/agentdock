@@ -144,6 +144,22 @@ public sealed class AgentRegistryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task RebrandingPreservesLegacyManagementAndCatalogIdentifiers()
+    {
+        Assert.Matches("^agentdock-[0-9A-F]{16}-5080$", AgentAdmin.PipeName(5080));
+        var registry = CreateRegistry();
+        await registry.StartAsync(CancellationToken.None);
+        using var catalog = JsonDocument.Parse(JsonSerializer.Serialize(registry.Catalog()));
+        var host = catalog.RootElement.GetProperty("host");
+        Assert.Equal("RepoAgentHost", host.GetProperty("displayName").GetString());
+        var hostId = host.GetProperty("identifier").GetString()!;
+        Assert.StartsWith("urn:agentdock:host:", hostId);
+        var entry = Assert.Single(catalog.RootElement.GetProperty("entries").EnumerateArray());
+        Assert.Equal($"urn:agentdock:{hostId["urn:agentdock:host:".Length..]}:agent:portfolio",
+            entry.GetProperty("identifier").GetString());
+    }
+
+    [Fact]
     public async Task FailedAgentsAreVisibleToManagementButNotAdvertised()
     {
         var registry = CreateRegistry(failingId: "broken");

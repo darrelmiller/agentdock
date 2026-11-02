@@ -22,8 +22,8 @@ await using (var client = new CopilotClient(new CopilotClientOptions
 }))
 {
     await client.StartAsync(timeout.Token);
-    var response = await client.PingAsync("agentdock-package-check", timeout.Token);
-    if (response.Message != "pong: agentdock-package-check")
+    var response = await client.PingAsync("repo-agent-host-package-check", timeout.Token);
+    if (response.Message != "pong: repo-agent-host-package-check")
     {
         throw new InvalidOperationException($"Unexpected runtime ping response: '{response.Message}', protocol {response.ProtocolVersion}.");
     }
@@ -81,7 +81,7 @@ try
     {
         throw new InvalidOperationException("Installed host did not expose the AI Catalog media type.");
     }
-    Console.WriteLine("Installed AgentDock host health and catalog checks succeeded.");
+    Console.WriteLine("Installed RepoAgentHost host health and catalog checks succeeded.");
 }
 finally
 {

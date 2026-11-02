@@ -10,7 +10,7 @@ if (args is ["--help"] or ["-h"] or ["help"])
 }
 if (args is ["--version"])
 {
-    Console.WriteLine($"AgentDock {typeof(AgentAdmin).Assembly.GetName().Version?.ToString(3)}");
+    Console.WriteLine($"RepoAgentHost {typeof(AgentAdmin).Assembly.GetName().Version?.ToString(3)}");
     return;
 }
 

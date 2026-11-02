@@ -1,14 +1,14 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "agentdock",
+  "name": "repo-agent-host",
   "version": "0.2.0",
-  "description": "Install and operate AgentDock workspace-backed A2A agents, discover them through AI Catalog, and delegate tracked work.",
+  "description": "Install and operate RepoAgentHost workspace-backed A2A agents, discover them through AI Catalog, and delegate tracked work.",
   "author": {
     "name": "Darrel Miller",
     "url": "https://github.com/darrelmiller"
   },
-  "homepage": "https://github.com/darrelmiller/agentdock",
-  "repository": "https://github.com/darrelmiller/agentdock",
+  "homepage": "https://github.com/darrelmiller/RepoAgentHost",
+  "repository": "https://github.com/darrelmiller/RepoAgentHost",
   "license": "MIT",
-  "keywords": ["agentdock", "a2a", "ai-catalog", "copilot", "spec-works"]
+  "keywords": ["repo-agent-host", "a2a", "ai-catalog", "copilot", "spec-works"]
 }

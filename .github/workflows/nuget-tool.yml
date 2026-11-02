@@ -85,7 +85,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
             throw 'Configure NUGET_API_KEY in the protected nuget environment.'
           }
-          foreach ($id in @('SpecWorks.AgentDock.Cli.win-x64', 'SpecWorks.AgentDock.Cli.win-arm64', 'SpecWorks.AgentDock.Cli')) {
+          foreach ($id in @('SpecWorks.RepoAgentHost.Cli.win-x64', 'SpecWorks.RepoAgentHost.Cli.win-arm64', 'SpecWorks.RepoAgentHost.Cli')) {
             $package = ".\artifacts\packages\$id.$env:PACKAGE_VERSION.nupkg"
             dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
             if ($LASTEXITCODE -ne 0) { throw "Publishing $id failed ($LASTEXITCODE)." }

@@ -1,14 +1,14 @@
-# AgentDock
+# RepoAgentHost
 
 **A Spec-Works project for hosting workspace-grounded agents through standard discovery and A2A.**
 
-AgentDock is currently incubated in the private
-[darrelmiller/agentdock repository](https://github.com/darrelmiller/agentdock).
+RepoAgentHost is currently incubated in the public
+[darrelmiller/RepoAgentHost repository](https://github.com/darrelmiller/RepoAgentHost).
 Project affiliation does not imply repository ownership: transfer to the `spec-works` organisation
-and public distribution are deferred. The repository was renamed from `portfolioagent` to
-`agentdock`; local installation paths remain unchanged.
+is deferred. Formerly called AgentDock, the project is now RepoAgentHost and its CLI is
+`rahcli`. Local checkout paths remain unchanged.
 
-The [host contract](docs/host-contract.md) documents AgentDock-specific behaviour.
+The [host contract](docs/host-contract.md) documents RepoAgentHost-specific behaviour.
 [specs.json](specs.json) links the underlying specifications in the Spec-Works linkset convention.
 See [contributing](CONTRIBUTING.md) and the [MIT license](LICENSE).
 
@@ -20,12 +20,12 @@ supplies an agent's knowledge, instructions, skills, and descriptive identity. E
 persistent Copilot session and a separate A2A task store. Workspaces currently use local Git
 repositories, but their public agent cards do not expose that implementation detail.
 
-The private agent repository and the grounding repository are separate. No portfolio content is
+The host source repository and the grounding repository are separate. No portfolio content is
 copied into this repository.
 
 ## Install as a .NET tool
 
-The repository builds `SpecWorks.AgentDock.Cli`, invoked as `agentdock`.
+The repository builds `SpecWorks.RepoAgentHost.Cli`, invoked as `rahcli`.
 The first tool packages target **Windows x64 and ARM64**. A small manifest package selects the
 matching RID package, which includes both the .NET/ASP.NET runtimes and the SDK's Copilot runtime
 assets. Installation requires the **.NET 10 SDK or later** for platform-specific tool support;
@@ -34,8 +34,8 @@ no separate .NET runtime or Copilot executable is required after installation.
 **Not published to NuGet.org yet.** Once a version is published:
 
 ```powershell
-dotnet tool install --global SpecWorks.AgentDock.Cli
-agentdock serve
+dotnet tool install --global SpecWorks.RepoAgentHost.Cli
+rahcli serve
 ```
 
 To build and install from an authorized local checkout:
@@ -43,10 +43,10 @@ To build and install from an authorized local checkout:
 ```powershell
 dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj -c Release `
   -p:Version=0.2.0-preview.1 --output .\artifacts\packages
-dotnet tool install --global SpecWorks.AgentDock.Cli --version 0.2.0-preview.1 `
+dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version 0.2.0-preview.1 `
   --add-source .\artifacts\packages
-agentdock --version
-agentdock serve
+rahcli --version
+rahcli serve
 ```
 
 Keep all three generated packages together: the manifest plus `.win-x64` and `.win-arm64`
@@ -91,14 +91,14 @@ manager is involved.** Run `serve` in one terminal and use other CLI invocations
 
 ```powershell
 # Terminal 1: start the host; Ctrl+C shuts down the host and all its agents.
-.\publish\win-arm64\AgentDock.exe serve
+.\publish\win-arm64\rahcli.exe serve
 
 # Terminal 2: register another workspace and start its agent in the running host.
-.\publish\win-arm64\AgentDock.exe start "D:\github\darrelmiller\ai-catalog"
-.\publish\win-arm64\AgentDock.exe start "D:\github\another\portfolio" --id another-portfolio
-.\publish\win-arm64\AgentDock.exe start "D:\github\darrelmiller\margo" --id assistant --persona margo
-.\publish\win-arm64\AgentDock.exe list
-.\publish\win-arm64\AgentDock.exe stop another-portfolio
+.\publish\win-arm64\rahcli.exe start "D:\github\darrelmiller\ai-catalog"
+.\publish\win-arm64\rahcli.exe start "D:\github\another\portfolio" --id another-portfolio
+.\publish\win-arm64\rahcli.exe start "D:\github\darrelmiller\margo" --id assistant --persona margo
+.\publish\win-arm64\rahcli.exe list
+.\publish\win-arm64\rahcli.exe stop another-portfolio
 ```
 
 `start` and `stop` apply to **agents**, not the host. `start` requires an already running host.
@@ -134,6 +134,9 @@ rejected; supply `--id` to distinguish repositories with the same folder name. A
 Copilot session ID.
 
 Registrations persist under `%LOCALAPPDATA%\AgentDock\hosts\port-5080\agents.json` by default.
+The legacy `AgentDock` state directory, management pipe prefix, and catalog URNs are intentionally
+retained for compatibility. Renaming does not move saved sessions or create new agent identities.
+Existing `REPOSITORY_AGENT_PORT` and `REPOAGENT_*` configuration names remain supported.
 The initial path seeds a new registry only; on subsequent host starts the saved registrations are
 restored, including the absence of agents previously stopped. Agents that fail to start are shown
 by `list` with their error, but are excluded from discovery. Stop and re-register to retry them.
@@ -184,7 +187,7 @@ dotnet publish .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj `
 Run the published executable to restore the registry:
 
 ```powershell
-.\publish\win-arm64\AgentDock.exe serve
+.\publish\win-arm64\rahcli.exe serve
 ```
 
 The agent scans text files when it receives a question, so changes to bundle documents are picked up
@@ -238,13 +241,13 @@ Register an installed custom-agent name with `--persona`; it is independent of t
 and the workspace's public card:
 
 ```powershell
-.\publish\win-arm64\AgentDock.exe start "D:\knowledge\assistant" --id assistant --persona margo
+.\publish\win-arm64\rahcli.exe start "D:\knowledge\assistant" --id assistant --persona margo
 .\run.ps1 -Command start -RepositoryPath "D:\knowledge\assistant" -AgentId assistant -Persona margo
 ```
 
 `list` includes the persisted `persona` name. Existing registrations without it still run the
 default agent. The SDK resolves the name from available custom agents, including workspace agent
-roots and the host user's `~\.copilot\agents` directory. AgentDock uses the SDK's native
+roots and the host user's `~\.copilot\agents` directory. RepoAgentHost uses the SDK's native
 session-scoped selection API rather than parsing agent definitions itself. Persona selection is
 validated on first work, not during registration, to preserve lazy runtime startup. An unavailable
 or disabled persona fails the request; it never silently falls back to the default agent.
@@ -257,15 +260,15 @@ explicitly if you want fresh history.
 
 Selecting Margo does not import this app's conversation, grant private-memory filesystem access,
 or configure Work IQ. Existing workspace/tool boundaries and disabled hook/MCP discovery still
-apply. AgentDock does not copy persona definitions into the workspace or expose private persona
+apply. RepoAgentHost does not copy persona definitions into the workspace or expose private persona
 paths in public cards.
 
 ### Consumer skill
 
-[The AgentDock CLI skill](skills/agentdock-cli/SKILL.md) teaches consumers how to acquire
-the `ai-catalog` and `a2a` CLIs, run and manage AgentDock, discover cards, and track tasks.
+[The RepoAgentHost CLI skill](skills/repo-agent-host-cli/SKILL.md) teaches consumers how to acquire
+the `ai-catalog` and `a2a` CLIs, run and manage RepoAgentHost, discover cards, and track tasks.
 The repository root is an [Agent Plugins 1.0](https://agent-plugins.org/specification) plugin
-named `agentdock`, with a root `plugin.json` and a discoverable `skills/agentdock-cli/SKILL.md`.
+named `repo-agent-host`, with a root `plugin.json` and a discoverable `skills/repo-agent-host-cli/SKILL.md`.
 Install the repository or the generated plugin ZIP using a compatible client's plugin installer.
 See [plugin distribution and installation](docs/plugin.md). Installation syntax is client-specific;
 the standard does not define a universal install command.
@@ -273,14 +276,14 @@ the standard does not define a universal install command.
 Alternatively, install just the skill in a directory supported by your agent harness:
 
 ```powershell
-$destination = Join-Path $HOME ".agents\skills\agentdock-cli"
+$destination = Join-Path $HOME ".agents\skills\repo-agent-host-cli"
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
-Copy-Item "skills\agentdock-cli\SKILL.md" (Join-Path $destination "SKILL.md")
+Copy-Item "skills\repo-agent-host-cli\SKILL.md" (Join-Path $destination "SKILL.md")
 ```
 
 Use your harness's documented skill root if different. The skill does not install executables
 automatically. Publishing also copies it alongside the executable as
-`skills\agentdock-cli\SKILL.md`.
+`skills\repo-agent-host-cli\SKILL.md`.
 
 ## Repository discovery and safety
 

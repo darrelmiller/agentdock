@@ -2,8 +2,8 @@
 
 ## Package contract
 
-- Package ID: `SpecWorks.AgentDock.Cli`
-- Command: `agentdock`
+- Package ID: `SpecWorks.RepoAgentHost.Cli`
+- Command: `rahcli`
 - Installer: .NET SDK 10 or later
 - Initial platforms: `win-x64` and `win-arm64`
 - Deployment: self-contained, including ASP.NET Core and the SDK-bundled Copilot runtime
@@ -30,10 +30,10 @@ dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj -c Release `
 ```
 
 The verification script checks the matching package's required assets, installs the manifest
-into a disposable tool directory, and exercises `agentdock --version` and `--help`. It then
+into a disposable tool directory, and exercises `rahcli --version` and `--help`. It then
 starts the installed Copilot runtime through the SDK and checks a RPC ping without creating a
 session, running tools, or invoking a model. It uses isolated runtime state and disables logged-in
-user authentication. It does not alter the real AgentDock host, registrations, or conversations.
+user authentication. It does not alter the real RepoAgentHost host, registrations, or conversations.
 It also launches the installed host on a temporary loopback port with a new registry, checks health
 and catalog HTTP responses, and terminates that helper process.
 Temporary installation/state files are cleaned up.
@@ -68,7 +68,7 @@ retrying already-published versions but cannot replace immutable packages.
 
 ### One-time publisher setup
 
-- Confirm access to the `SpecWorks.AgentDock.Cli` package ID and RID-suffixed IDs with the chosen
+- Confirm access to the `SpecWorks.RepoAgentHost.Cli` package ID and RID-suffixed IDs with the chosen
   NuGet.org account. Project affiliation does not establish NuGet prefix ownership.
 - Create the repository's `nuget` environment with required reviewers and restrict allowed branches
   to the intended release branch. Repository plan/visibility may limit environment protection;
@@ -88,9 +88,9 @@ release upload is created by this mechanism.
 After publication, stop the host before updating its installed files:
 
 ```powershell
-dotnet tool update --global SpecWorks.AgentDock.Cli
+dotnet tool update --global SpecWorks.RepoAgentHost.Cli
 ```
 
-`agentdock stop <id>` unregisters an agent; it is not a command to stop the host. End the foreground
+`rahcli stop <id>` unregisters an agent; it is not a command to stop the host. End the foreground
 `serve` process with Ctrl+C first. NuGet-tool and self-contained executable installations share the
 normal host state, so never run two instances on the same port/state directory.

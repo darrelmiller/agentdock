@@ -4,19 +4,19 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>AgentDock</AssemblyName>
+    <AssemblyName>rahcli</AssemblyName>
     <Version>0.2.0</Version>
-    <Product>AgentDock</Product>
+    <Product>RepoAgentHost</Product>
     <Description>Spec-Works workspace-grounded A2A agent host with AI Catalog discovery.</Description>
-    <RepositoryUrl>https://github.com/darrelmiller/agentdock</RepositoryUrl>
+    <RepositoryUrl>https://github.com/darrelmiller/RepoAgentHost</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackAsTool>true</PackAsTool>
     <IsPackable>true</IsPackable>
-    <ToolCommandName>agentdock</ToolCommandName>
-    <PackageId>SpecWorks.AgentDock.Cli</PackageId>
+    <ToolCommandName>rahcli</ToolCommandName>
+    <PackageId>SpecWorks.RepoAgentHost.Cli</PackageId>
     <Authors>Darrel Miller</Authors>
-    <PackageProjectUrl>https://github.com/darrelmiller/agentdock</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/darrelmiller/RepoAgentHost</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoDefaultExcludes>true</NoDefaultExcludes>
     <PackageTags>spec-works;a2a;ai-catalog;agents;copilot</PackageTags>
@@ -29,9 +29,9 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="A2A.AspNetCore" Version="1.0.0-preview3" />
     <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.28" />
-    <Content Include="..\..\skills\agentdock-cli\SKILL.md"
+    <Content Include="..\..\skills\repo-agent-host-cli\SKILL.md"
              Pack="false"
-             Link="skills\agentdock-cli\SKILL.md"
+             Link="skills\repo-agent-host-cli\SKILL.md"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />

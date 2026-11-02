@@ -17,14 +17,14 @@ if ($rid -notin @('win-x64', 'win-arm64')) {
     throw "Tool smoke checks require Windows x64 or ARM64; current RID is $rid."
 }
 
-$package = Join-Path $PackageDirectory "SpecWorks.AgentDock.Cli.$rid.$Version.nupkg"
+$package = Join-Path $PackageDirectory "SpecWorks.RepoAgentHost.Cli.$rid.$Version.nupkg"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($package)
 try {
     $prefix = "tools/any/$rid/"
     foreach ($required in @(
-        'AgentDock.exe', 'AgentDock.runtimeconfig.json', 'LICENSE', 'specs.json', 'plugin.json',
-        'skills/agentdock-cli/SKILL.md',
+        'rahcli.exe', 'rahcli.runtimeconfig.json', 'LICENSE', 'specs.json', 'plugin.json',
+        'skills/repo-agent-host-cli/SKILL.md',
         "runtimes/$rid/native/copilot.exe",
         "runtimes/$rid/native/copilot-runtime.exe",
         "runtimes/$rid/native/copilot_runtime.dll",
@@ -39,16 +39,16 @@ try {
     $archive.Dispose()
 }
 
-$toolDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "agentdock-tool-$([Guid]::NewGuid().ToString('N'))"
+$toolDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "repo-agent-host-tool-$([Guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Path $toolDirectory | Out-Null
 try {
-    & $DotNetExecutable tool install SpecWorks.AgentDock.Cli --version $Version --tool-path $toolDirectory `
+    & $DotNetExecutable tool install SpecWorks.RepoAgentHost.Cli --version $Version --tool-path $toolDirectory `
         --source $PackageDirectory --source https://api.nuget.org/v3/index.json --arch $rid.Substring(4)
     if ($LASTEXITCODE -ne 0) { throw "Local tool installation failed ($LASTEXITCODE)." }
 
-    $command = Join-Path $toolDirectory 'agentdock.cmd'
+    $command = Join-Path $toolDirectory 'rahcli.cmd'
     $versionOutput = & $command --version
-    if ($LASTEXITCODE -ne 0 -or $versionOutput -ne "AgentDock $($Version.Split('-')[0])") {
+    if ($LASTEXITCODE -ne 0 -or $versionOutput -ne "RepoAgentHost $($Version.Split('-')[0])") {
         throw "Unexpected tool version: $versionOutput"
     }
     & $command --help
@@ -62,9 +62,9 @@ try {
     }
     & $DotNetExecutable run (Join-Path $PSScriptRoot 'verify-runtime.cs') -- `
         $runtime.FullName (Join-Path $toolDirectory 'runtime-state') `
-        (Join-Path $runtime.Directory.Parent.Parent.Parent.FullName 'AgentDock.exe')
+        (Join-Path $runtime.Directory.Parent.Parent.Parent.FullName 'rahcli.exe')
     if ($LASTEXITCODE -ne 0) { throw "Bundled Copilot runtime handshake failed ($LASTEXITCODE)." }
-    Write-Output "Verified installed AgentDock tool and bundled runtime for $rid."
+    Write-Output "Verified installed RepoAgentHost tool and bundled runtime for $rid."
 } finally {
     for ($attempt = 1; $attempt -le 5; $attempt++) {
         try {

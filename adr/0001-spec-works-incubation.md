@@ -2,6 +2,14 @@
 
 ## Status
 
+Superseding amendment on 2026-11-01: at the user's request the repository was made public, then
+renamed to `darrelmiller/RepoAgentHost`. The product is RepoAgentHost (formerly AgentDock), CLI
+`rahcli`, package `SpecWorks.RepoAgentHost.Cli`, plugin `repo-agent-host`, and skill
+`repo-agent-host-cli`. Organisation transfer remains unperformed. The original decisions below
+describe their historical context; private visibility and the earlier product/remote names no
+longer apply. Legacy state paths, pipe prefix, catalog URNs, and configuration names remain
+unchanged to preserve existing registrations, session continuity, and discovery identifiers.
+
 Accepted on 2026-11-01 for affiliation, ownership, and licensing.
 Publication and full packaging alignment remain deferred.
 

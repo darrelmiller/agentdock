@@ -1,6 +1,6 @@
-# AgentDock host contract
+# RepoAgentHost host contract
 
-AgentDock is a Spec-Works project providing an agent host over workspace knowledge, skills,
+RepoAgentHost is a Spec-Works project providing an agent host over workspace knowledge, skills,
 instructions, and the GitHub Copilot SDK. This document describes the current 0.2 implementation,
 not an independent replacement for the underlying protocol specifications.
 
@@ -11,12 +11,12 @@ artifacts, and streaming. [AI Catalog](https://ai-catalog.io/spec/) defines the 
 [Agent Skills](https://agentskills.io/specification) defines workspace skill artifacts.
 [specs.json](../specs.json) is the project's specification linkset.
 
-AgentDock-specific contracts are registration, runtime ownership, workspace binding, and
+RepoAgentHost-specific contracts are registration, runtime ownership, workspace binding, and
 receiving-session continuity. Git is the current workspace provider, not the public agent identity.
 
 ## Registration and host lifetime
 
-`AgentDock serve` restores the persisted registry or initializes an empty one. An optional workspace
+`rahcli serve` restores the persisted registry or initializes an empty one. An optional workspace
 argument seeds a new registry only. The process runs in the foreground; no OS service is installed.
 
 `start <workspace> [--id <id>] [--persona <name>]`, `list`, and `stop <id>` control the running host
@@ -96,11 +96,11 @@ streaming, progress events, cancellation, and optional personas. Tests do not cl
 conformance or validate every model/runtime capability. Real runtime checks require an authenticated
 Copilot account and disposable workspaces; normal CI does not invoke inference.
 
-The source repository currently remains private at
-[darrelmiller/agentdock](https://github.com/darrelmiller/agentdock). Spec-Works affiliation
+The source repository is public at
+[darrelmiller/RepoAgentHost](https://github.com/darrelmiller/RepoAgentHost). Spec-Works affiliation
 does not imply a published registry entry, public release, or ownership transfer.
 
-[NuGet-tool packaging](nuget-tool.md) builds `SpecWorks.AgentDock.Cli` with command `agentdock`,
+[NuGet-tool packaging](nuget-tool.md) builds `SpecWorks.RepoAgentHost.Cli` with command `rahcli`,
 using self-contained Windows x64/ARM64 packages and a .NET 10 manifest. Disposable installation,
 runtime handshake, and host HTTP checks gate the manually requested publication job. The
 mechanism does not establish a NuGet.org release or expand supported platforms beyond Windows.
