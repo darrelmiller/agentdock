@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Hosting;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public interface IHostedAgentRuntime : IAgentRuntime, IHostedService, IAsyncDisposable;

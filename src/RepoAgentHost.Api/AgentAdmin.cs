@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<AgentAdmin> logger) : BackgroundService
 {

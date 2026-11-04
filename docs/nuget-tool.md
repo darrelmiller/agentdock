@@ -23,8 +23,8 @@ configured runtime download source; installed execution does not download a repl
 From the repository root in PowerShell:
 
 ```powershell
-dotnet test .\PortfolioAgent.sln -c Release
-dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj -c Release `
+dotnet test .\RepoAgentHost.sln -c Release
+dotnet pack .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj -c Release `
   -p:Version=0.2.0-preview.1 --output .\artifacts\packages
 .\scripts\verify-tool.ps1 -PackageDirectory .\artifacts\packages -Version 0.2.0-preview.1
 ```

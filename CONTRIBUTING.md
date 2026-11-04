@@ -15,7 +15,7 @@ behaviour changes. Describe intentional deviations and limitations explicitly.
 With the .NET 10 SDK, from the repository root:
 
 ```powershell
-dotnet test .\PortfolioAgent.sln
+dotnet test .\RepoAgentHost.sln
 git diff --check
 ```
 

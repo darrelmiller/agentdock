@@ -97,8 +97,8 @@ conformance or validate every model/runtime capability. Real runtime checks requ
 Copilot account and disposable workspaces; normal CI does not invoke inference.
 
 The source repository is public at
-[darrelmiller/RepoAgentHost](https://github.com/darrelmiller/RepoAgentHost). Spec-Works affiliation
-does not imply a published registry entry, public release, or ownership transfer.
+[spec-works/RepoAgentHost](https://github.com/spec-works/RepoAgentHost). Hosting under Spec-Works
+does not imply a published registry entry or public release.
 
 [NuGet-tool packaging](nuget-tool.md) builds `SpecWorks.RepoAgentHost.Cli` with command `rahcli`,
 using self-contained Windows x64/ARM64 packages and a .NET 10 manifest. Disposable installation,

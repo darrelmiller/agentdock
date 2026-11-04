@@ -1,4 +1,4 @@
-#:project ..\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj
+#:project ..\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj
 #:property PublishAot=false
 
 using GitHub.Copilot;

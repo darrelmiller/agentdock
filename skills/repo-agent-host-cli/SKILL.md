@@ -9,8 +9,8 @@ This skill is distributed by the `repo-agent-host` Agent Plugins 1.0 plugin. Loa
 does not install executables, start a host, or grant permission to invoke agents.
 
 RepoAgentHost is a Spec-Works project at the public repository
-`darrelmiller/RepoAgentHost` (formerly `darrelmiller/portfolioagent`). Do not assume an organisation
-transfer, public catalog listing, or public release exists. A NuGet tool packaging mechanism
+`spec-works/RepoAgentHost`. Do not assume a public catalog listing or public release exists.
+A NuGet tool packaging mechanism
 exists, but no NuGet.org publication is established. Source and binary distributions use MIT.
 
 RepoAgentHost hosts agents whose workspaces supply knowledge, instructions, skills, and public
@@ -51,11 +51,11 @@ dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version <approved-ver
 Stop the foreground host before `dotnet tool update`; do not overwrite a running installation.
 Package installation is not account authentication or permission to start inference.
 
-Use a supplied executable or build from an authorized checkout of `darrelmiller/RepoAgentHost`.
+Use a supplied executable or build from an authorized checkout of `spec-works/RepoAgentHost`.
 Do not assume a public release exists. From that checkout:
 
 ```powershell
-dotnet publish .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj `
+dotnet publish .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj `
   -c Release -r win-arm64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true `
   -o .\publish\win-arm64

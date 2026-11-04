@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace PortfolioAgent.Api.Tests;
+namespace RepoAgentHost.Api.Tests;
 
 public sealed class AgentRegistryTests : IAsyncLifetime
 {

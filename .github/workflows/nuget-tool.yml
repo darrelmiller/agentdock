@@ -32,11 +32,11 @@ jobs:
             throw 'Use a three-component NuGet version with an optional prerelease suffix.'
           }
       - name: Test
-        run: dotnet test .\PortfolioAgent.sln --configuration Release
+        run: dotnet test .\RepoAgentHost.sln --configuration Release
       - name: Pack Windows tools
         env:
           PACKAGE_VERSION: ${{ inputs.version }}
-        run: dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj --configuration Release -p:Version=$env:PACKAGE_VERSION --output .\artifacts\packages
+        run: dotnet pack .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj --configuration Release -p:Version=$env:PACKAGE_VERSION --output .\artifacts\packages
       - uses: actions/upload-artifact@v4
         with:
           name: nuget-tool

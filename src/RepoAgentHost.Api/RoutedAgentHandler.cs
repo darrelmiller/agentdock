@@ -1,6 +1,6 @@
 using A2A;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed class RoutedAgentHandler(AgentRegistry registry, IHttpContextAccessor accessor, Func<string>? defaultAgentId = null)
     : IA2ARequestHandler

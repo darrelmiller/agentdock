@@ -7,8 +7,8 @@
     "name": "Darrel Miller",
     "url": "https://github.com/darrelmiller"
   },
-  "homepage": "https://github.com/darrelmiller/RepoAgentHost",
-  "repository": "https://github.com/darrelmiller/RepoAgentHost",
+  "homepage": "https://github.com/spec-works/RepoAgentHost",
+  "repository": "https://github.com/spec-works/RepoAgentHost",
   "license": "MIT",
   "keywords": ["repo-agent-host", "a2a", "ai-catalog", "copilot", "spec-works"]
 }
