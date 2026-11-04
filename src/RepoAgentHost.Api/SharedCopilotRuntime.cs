@@ -1,6 +1,6 @@
 using GitHub.Copilot;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed class SharedCopilotRuntime(ILogger<SharedCopilotRuntime> logger) : IAsyncDisposable
 {

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using A2A;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed class AgentRegistry : IHostedService, IAsyncDisposable
 {

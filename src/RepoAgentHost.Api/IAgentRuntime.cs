@@ -1,4 +1,4 @@
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public interface IAgentRuntime
 {

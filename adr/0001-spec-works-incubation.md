@@ -2,6 +2,15 @@
 
 ## Status
 
+Superseding amendment on 2026-11-04: the repository is now hosted at
+`spec-works/RepoAgentHost`. The solution is `RepoAgentHost.sln`, the source and test projects
+are `RepoAgentHost.Api` and `RepoAgentHost.Api.Tests`, and their C# namespaces match those names.
+This completes the deferred internal project rename. The executable remains `rahcli` and the
+package remains `SpecWorks.RepoAgentHost.Cli`. Local checkout paths are unchanged. Legacy
+state paths, management pipe prefix, catalog URNs, and configuration names remain unchanged
+to preserve existing registrations, session continuity, and discovery identifiers. Earlier
+ownership, naming, and staging decisions below are retained as historical context.
+
 Superseding amendment on 2026-11-01: at the user's request the repository was made public, then
 renamed to `darrelmiller/RepoAgentHost`. The product is RepoAgentHost (formerly AgentDock), CLI
 `rahcli`, package `SpecWorks.RepoAgentHost.Cli`, plugin `repo-agent-host`, and skill

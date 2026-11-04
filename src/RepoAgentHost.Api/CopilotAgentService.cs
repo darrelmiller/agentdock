@@ -5,7 +5,7 @@ using GitHub.Copilot;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed class CopilotAgentService : IHostedAgentRuntime
 {

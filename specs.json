@@ -31,7 +31,7 @@
       "title": "Agent Skills Specification"
     },
     {
-      "href": "https://github.com/darrelmiller/RepoAgentHost/blob/main/docs/host-contract.md",
+      "href": "https://github.com/spec-works/RepoAgentHost/blob/main/docs/host-contract.md",
       "type": "text/html",
       "rel": "describedby",
       "title": "RepoAgentHost Host Contract"

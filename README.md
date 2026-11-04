@@ -3,9 +3,9 @@
 **A Spec-Works project for hosting workspace-grounded agents through standard discovery and A2A.**
 
 RepoAgentHost is currently incubated in the public
-[darrelmiller/RepoAgentHost repository](https://github.com/darrelmiller/RepoAgentHost).
-Project affiliation does not imply repository ownership: transfer to the `spec-works` organisation
-is deferred. Formerly called AgentDock, the project is now RepoAgentHost and its CLI is
+[spec-works/RepoAgentHost repository](https://github.com/spec-works/RepoAgentHost).
+The repository is hosted by the `spec-works` organisation. Formerly called AgentDock,
+the project is now RepoAgentHost and its CLI is
 `rahcli`. Local checkout paths remain unchanged.
 
 The [host contract](docs/host-contract.md) documents RepoAgentHost-specific behaviour.
@@ -41,7 +41,7 @@ rahcli serve
 To build and install from an authorized local checkout:
 
 ```powershell
-dotnet pack .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj -c Release `
+dotnet pack .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj -c Release `
   -p:Version=0.2.0-preview.1 --output .\artifacts\packages
 dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version 0.2.0-preview.1 `
   --add-source .\artifacts\packages
@@ -178,7 +178,7 @@ one process may own a registry directory at a time.
 On the Windows ARM64 development machine, publish a self-contained executable:
 
 ```powershell
-dotnet publish .\src\PortfolioAgent.Api\PortfolioAgent.Api.csproj `
+dotnet publish .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj `
   -c Release -r win-arm64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true `
   -o .\publish\win-arm64

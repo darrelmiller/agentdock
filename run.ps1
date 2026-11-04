@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $resolvedRepositoryPath = if ($RepositoryPath) { [System.IO.Path]::GetFullPath($RepositoryPath) } else { $null }
-$projectPath = Join-Path $PSScriptRoot "src\PortfolioAgent.Api\PortfolioAgent.Api.csproj"
+$projectPath = Join-Path $PSScriptRoot "src\RepoAgentHost.Api\RepoAgentHost.Api.csproj"
 if ($Persona -and $Command -ne "start") {
     throw "-Persona applies to -Command start. Register the persona after starting the host."
 }

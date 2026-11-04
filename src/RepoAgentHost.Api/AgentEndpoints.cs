@@ -1,7 +1,7 @@
 using A2A;
 using A2A.AspNetCore;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public static class AgentEndpoints
 {

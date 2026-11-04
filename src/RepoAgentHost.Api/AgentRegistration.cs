@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public sealed record AgentRegistration(string Id, string WorkspacePath, string? Persona = null);
 public sealed record RegisterAgentRequest(string WorkspacePath, string? Id = null, string? Persona = null);

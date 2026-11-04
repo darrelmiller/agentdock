@@ -25,7 +25,7 @@ Use your client's **Agent Plugins-compatible plugin installer**, supplying eithe
 checkout of this repository, its repository URL if supported, or an extracted plugin ZIP.
 Select the directory containing `plugin.json` as the plugin root.
 
-Repository URL: `https://github.com/darrelmiller/RepoAgentHost`
+Repository URL: `https://github.com/spec-works/RepoAgentHost`
 
 The repository is public. The manifest does not automatically register
 the plugin in a marketplace/catalog. No public release URL

@@ -1,6 +1,6 @@
 using A2A;
 
-namespace PortfolioAgent.Api;
+namespace RepoAgentHost.Api;
 
 public static class AgentCards
 {
