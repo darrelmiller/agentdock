@@ -2,7 +2,7 @@ using A2A;
 
 namespace RepoAgentHost.Api;
 
-public sealed class RepositoryAgentHandler(IAgentRuntime agent) : IAgentHandler
+public sealed class RepositoryAgentHandler(IAgentRuntime agent, ILogger<RepositoryAgentHandler> logger) : IAgentHandler
 {
     public async Task ExecuteAsync(
         RequestContext context,
@@ -53,6 +53,19 @@ public sealed class RepositoryAgentHandler(IAgentRuntime agent) : IAgentHandler
                 ContextId = context.ContextId,
                 Role = Role.Agent,
                 Parts = [Part.FromText(exception.Message)]
+            }, cancellationToken: cancellationToken);
+            return;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(exception, "Agent execution failed for task {TaskId}", context.TaskId);
+            await updater.FailAsync(new Message
+            {
+                MessageId = Guid.NewGuid().ToString("N"),
+                TaskId = context.TaskId,
+                ContextId = context.ContextId,
+                Role = Role.Agent,
+                Parts = [Part.FromText("Agent execution failed. Check the host logs for details.")]
             }, cancellationToken: cancellationToken);
             return;
         }

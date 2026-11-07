@@ -35,7 +35,7 @@ no separate .NET runtime or Copilot executable is required after installation.
 
 ```powershell
 dotnet tool install --global SpecWorks.RepoAgentHost.Cli
-rahcli serve
+rahcli start
 ```
 
 To build and install from an authorized local checkout:
@@ -46,7 +46,7 @@ dotnet pack .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj -c Release `
 dotnet tool install --global SpecWorks.RepoAgentHost.Cli --version 0.2.0-preview.1 `
   --add-source .\artifacts\packages
 rahcli --version
-rahcli serve
+rahcli start
 ```
 
 Keep all three generated packages together: the manifest plus `.win-x64` and `.win-arm64`
@@ -80,29 +80,33 @@ Pass another local Git repository path directly when needed:
 ```
 
 An initial repository path is optional when starting the host. It seeds a new registry only;
-otherwise `serve` restores saved registrations, or creates an empty registry on first run.
+otherwise `start` restores saved registrations, or creates an empty registry on first run.
 Workspace paths are not read from an environment variable. The folder name supplies the friendly agent ID:
 `Portfolio` becomes `portfolio`, `AI Catalog` becomes `ai-catalog`.
 
 ### Host and agent lifetimes
 
-The host is an ordinary foreground application. **No Windows Service, installation, or service
-manager is involved.** Run `serve` in one terminal and use other CLI invocations to control it:
+The host is an ordinary application. **No Windows Service, installation, or service
+manager is involved.** `start` runs in the foreground by default. Use `start --background` on
+Windows to detach it; logs are appended to `host.log` in the host state directory. `serve` remains
+a foreground alias. Use other CLI invocations to manage agents or shut down the host:
 
 ```powershell
 # Terminal 1: start the host; Ctrl+C shuts down the host and all its agents.
-.\publish\win-arm64\rahcli.exe serve
+.\publish\win-arm64\rahcli.exe start
 
 # Terminal 2: register another workspace and start its agent in the running host.
-.\publish\win-arm64\rahcli.exe start "D:\github\darrelmiller\ai-catalog"
-.\publish\win-arm64\rahcli.exe start "D:\github\another\portfolio" --id another-portfolio
-.\publish\win-arm64\rahcli.exe start "D:\github\darrelmiller\margo" --id assistant --persona margo
+.\publish\win-arm64\rahcli.exe add "D:\github\darrelmiller\ai-catalog"
+.\publish\win-arm64\rahcli.exe add "D:\github\another\portfolio" --id another-portfolio
+.\publish\win-arm64\rahcli.exe add "D:\github\darrelmiller\margo" --id assistant --persona margo
 .\publish\win-arm64\rahcli.exe list
-.\publish\win-arm64\rahcli.exe stop another-portfolio
+.\publish\win-arm64\rahcli.exe remove another-portfolio
+.\publish\win-arm64\rahcli.exe stop
 ```
 
-`start` and `stop` apply to **agents**, not the host. `start` requires an already running host.
-`stop` cancels and joins outstanding A2A work before unregistering the agent. It does not delete workspace
+`start` and `stop` control the **host**. `stop` shuts down all agents but preserves their registrations.
+`add` and `remove` manage **agents** in an already running host. `remove` cancels and joins
+outstanding A2A work before unregistering the agent. It does not delete workspace
 files or saved session state. Re-registering the same ID and workspace resumes its saved session.
 Other agents continue serving while registrations change.
 
@@ -122,10 +126,12 @@ reported; there is no silent session replacement or automatic failover.
 Equivalent development commands:
 
 ```powershell
-.\run.ps1 -Command start -RepositoryPath "D:\github\darrelmiller\ai-catalog"
-.\run.ps1 -Command start -RepositoryPath "D:\github\another\portfolio" -AgentId another-portfolio
+.\run.ps1 -Command start -Background
+.\run.ps1 -Command add -RepositoryPath "D:\github\darrelmiller\ai-catalog"
+.\run.ps1 -Command add -RepositoryPath "D:\github\another\portfolio" -AgentId another-portfolio
 .\run.ps1 -Command list
-.\run.ps1 -Command stop -AgentId another-portfolio
+.\run.ps1 -Command remove -AgentId another-portfolio
+.\run.ps1 -Command stop
 ```
 
 IDs are 1-64 lowercase ASCII letters/digits separated by single hyphens. Automatic IDs use the
@@ -138,8 +144,8 @@ The legacy `AgentDock` state directory, management pipe prefix, and catalog URNs
 retained for compatibility. Renaming does not move saved sessions or create new agent identities.
 Existing `REPOSITORY_AGENT_PORT` and `REPOAGENT_*` configuration names remain supported.
 The initial path seeds a new registry only; on subsequent host starts the saved registrations are
-restored, including the absence of agents previously stopped. Agents that fail to start are shown
-by `list` with their error, but are excluded from discovery. Stop and re-register to retry them.
+restored, including the absence of agents previously removed. Agents that fail to start are shown
+by `list` with their error, but are excluded from discovery. Remove and re-add to retry them.
 
 Without an explicit initial path, there is no default agent or root A2A alias. Discover agents
 through `/catalog` and use their `/agents/{id}` URLs. Passing an initial path retains the legacy
@@ -166,8 +172,8 @@ description from its first prose paragraph. If neither source provides a value, 
 are used. The runtime supplies the A2A endpoint and protocol fields.
 
 By default, the server listens on `http://127.0.0.1:5080`. Override the port with
-`REPOSITORY_AGENT_PORT` and the model with `REPOSITORY_AGENT_MODEL`. The default model is
-`gpt-5.4`.
+`REPOSITORY_AGENT_PORT` and the model with `REPOSITORY_AGENT_MODEL`. If no model is configured,
+the Copilot runtime selects its default model.
 
 Use the same `REPOSITORY_AGENT_PORT` for host and CLI commands. Separate ports address separate
 hosts. `REPOAGENT_STATE_DIRECTORY` overrides the host's registry and session-state directory;
@@ -187,7 +193,7 @@ dotnet publish .\src\RepoAgentHost.Api\RepoAgentHost.Api.csproj `
 Run the published executable to restore the registry:
 
 ```powershell
-.\publish\win-arm64\rahcli.exe serve
+.\publish\win-arm64\rahcli.exe start
 ```
 
 The agent scans text files when it receives a question, so changes to bundle documents are picked up
@@ -241,8 +247,8 @@ Register an installed custom-agent name with `--persona`; it is independent of t
 and the workspace's public card:
 
 ```powershell
-.\publish\win-arm64\rahcli.exe start "D:\knowledge\assistant" --id assistant --persona margo
-.\run.ps1 -Command start -RepositoryPath "D:\knowledge\assistant" -AgentId assistant -Persona margo
+.\publish\win-arm64\rahcli.exe add "D:\knowledge\assistant" --id assistant --persona margo
+.\run.ps1 -Command add -RepositoryPath "D:\knowledge\assistant" -AgentId assistant -Persona margo
 ```
 
 `list` includes the persisted `persona` name. Existing registrations without it still run the
@@ -254,7 +260,7 @@ or disabled persona fails the request; it never silently falls back to the defau
 
 Selection is reapplied before work on created/resumed sessions and when `/new-session` creates
 a replacement. It affects only that agent's session, not other sessions on the shared runtime.
-To change a registered persona, stop and re-register the same ID/workspace with the new option
+To change a registered persona, remove and re-add the same ID/workspace with the new option
 (or omit it to return to the default). This preserves the saved conversation; request `/new-session`
 explicitly if you want fresh history.
 

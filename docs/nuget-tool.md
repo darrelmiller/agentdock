@@ -88,9 +88,10 @@ release upload is created by this mechanism.
 After publication, stop the host before updating its installed files:
 
 ```powershell
+rahcli stop
 dotnet tool update --global SpecWorks.RepoAgentHost.Cli
 ```
 
-`rahcli stop <id>` unregisters an agent; it is not a command to stop the host. End the foreground
-`serve` process with Ctrl+C first. NuGet-tool and self-contained executable installations share the
+`rahcli stop` shuts down the host and preserves registrations. Ctrl+C also stops a foreground
+`start` process. `rahcli remove <id>` unregisters just that agent. NuGet-tool and self-contained executable installations share the
 normal host state, so never run two instances on the same port/state directory.

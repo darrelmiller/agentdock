@@ -1,9 +1,42 @@
 using A2A;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RepoAgentHost.Api.Tests;
 
 public sealed class AgentHandlerTests
 {
+    [Theory]
+    [InlineData("runtime")]
+    [InlineData("timeout")]
+    [InlineData("cancellation")]
+    public async Task RuntimeErrorsProduceFailedTasksWithoutExposingExceptionDetails(string failure)
+    {
+        Exception exception = failure switch
+        {
+            "runtime" => new IOException("Model unavailable; private diagnostic details."),
+            "timeout" => new TimeoutException("Private timeout details."),
+            _ => new OperationCanceledException("Private cancellation details.")
+        };
+        var events = await ExecuteAsync(new FakeRuntime { Failure = exception }, "Do work.");
+        var status = Assert.IsType<TaskStatusUpdateEvent>(events.Last().StatusUpdate);
+        Assert.Equal(TaskState.Failed, status.Status.State);
+        Assert.Equal("Agent execution failed. Check the host logs for details.", status.Status.Message!.Parts[0].Text);
+        Assert.DoesNotContain(events, item => item.ArtifactUpdate is not null);
+    }
+
+    [Fact]
+    public async Task CallerCancellationPropagatesWithoutReportingAnExecutionFailure()
+    {
+        using var cancellation = new CancellationTokenSource();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            ExecuteAsync(new FakeRuntime
+            {
+                CancelOnAsk = cancellation,
+                Failure = new OperationCanceledException(cancellation.Token)
+            },
+                "Do work.", cancellation.Token));
+    }
+
     [Fact]
     public async Task MissingPersonaProducesFailedTaskWithAnExplicitExplanation()
     {
@@ -73,7 +106,8 @@ public sealed class AgentHandlerTests
         Assert.Equal(0, runtime.Resets);
     }
 
-    private static async Task<List<StreamResponse>> ExecuteAsync(FakeRuntime runtime, string text)
+    private static async Task<List<StreamResponse>> ExecuteAsync(FakeRuntime runtime, string text,
+        CancellationToken cancellationToken = default)
     {
         var queue = new AgentEventQueue(10);
         var context = new RequestContext
@@ -83,7 +117,8 @@ public sealed class AgentHandlerTests
             ContextId = "caller-context",
             StreamingResponse = false
         };
-        await new RepositoryAgentHandler(runtime).ExecuteAsync(context, queue, CancellationToken.None);
+        await new RepositoryAgentHandler(runtime, NullLogger<RepositoryAgentHandler>.Instance)
+            .ExecuteAsync(context, queue, cancellationToken);
         queue.Complete();
         var events = new List<StreamResponse>();
         await foreach (var item in queue)
@@ -99,11 +134,18 @@ public sealed class AgentHandlerTests
         public int Resets { get; private set; }
         public string[] Progress { get; init; } = [];
         public bool MissingPersona { get; init; }
+        public Exception? Failure { get; init; }
+        public CancellationTokenSource? CancelOnAsk { get; init; }
 
         public async Task<string> AskAsync(string taskId, string question, CancellationToken cancellationToken,
             Func<string, CancellationToken, Task>? reportProgress = null)
         {
             LastTaskId = taskId;
+            CancelOnAsk?.Cancel();
+            if (Failure is not null)
+            {
+                throw Failure;
+            }
             if (MissingPersona)
             {
                 throw new PersonaSelectionException("missing", new IOException("Missing agent"));

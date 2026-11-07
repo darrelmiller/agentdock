@@ -74,8 +74,7 @@ public sealed class CopilotAgentService : IHostedAgentRuntime
         _statePath = Path.Combine(stateDirectory, "sessions", AgentIds.Validate(agentId), key, "active-session.txt");
         _model = configuration["Copilot:Model"]
             ?? Environment.GetEnvironmentVariable("REPOSITORY_AGENT_MODEL")
-            ?? Environment.GetEnvironmentVariable("PORTFOLIO_AGENT_MODEL")
-            ?? "gpt-5.4";
+            ?? Environment.GetEnvironmentVariable("PORTFOLIO_AGENT_MODEL");
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

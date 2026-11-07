@@ -20,31 +20,37 @@ if (!int.TryParse(portValue, out var port) || port is < 1 or > 65535)
     throw new InvalidOperationException("REPOSITORY_AGENT_PORT must be a valid TCP port.");
 }
 var pipeName = AgentAdmin.PipeName(port);
-if (args.Length > 0 && args[0] is "start" or "stop" or "list")
+if (args.Length > 0 && args[0] is "add" or "remove" or "stop" or "list")
 {
     Environment.ExitCode = await AgentAdmin.RunCommandAsync(args, pipeName);
     return;
 }
 
-var workspaceArgument = args switch
+var backgroundWorker = args.LastOrDefault() == HostCommands.BackgroundWorkerArgument;
+if (backgroundWorker)
 {
-    ["serve"] => null,
-    ["serve", var path] => path,
-    [var path] when path != "serve" => path,
-    _ => throw new InvalidOperationException(AgentAdmin.Usage)
-};
-if (workspaceArgument is not null && string.IsNullOrWhiteSpace(workspaceArgument))
-{
-    throw new InvalidOperationException(AgentAdmin.Usage);
+    args = args[..^1];
 }
-var initialWorkspace = workspaceArgument is null ? null
-    : Path.TrimEndingDirectorySeparator(Path.GetFullPath(workspaceArgument));
+var (workspaceArgument, background) = HostCommands.ParseStart(args);
+var initialWorkspace = workspaceArgument is null ? null : Path.TrimEndingDirectorySeparator(workspaceArgument);
 var builder = WebApplication.CreateBuilder([]);
 var baseUrl = $"http://127.0.0.1:{port}";
 var stateDirectory = builder.Configuration["REPOAGENT_STATE_DIRECTORY"]
     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "AgentDock", "hosts", $"port-{port}");
 stateDirectory = Path.GetFullPath(stateDirectory);
+if (background)
+{
+    Environment.ExitCode = await HostCommands.StartBackgroundAsync(initialWorkspace, port, pipeName, stateDirectory);
+    return;
+}
+using var backgroundLog = backgroundWorker
+    ? OpenBackgroundLog(stateDirectory) : null;
+if (backgroundLog is not null)
+{
+    Console.SetOut(backgroundLog);
+    Console.SetError(backgroundLog);
+}
 var allowedRoots = builder.Configuration["REPOAGENT_ALLOWED_ROOTS"]?.Split(
     ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
@@ -59,9 +65,17 @@ builder.Services.AddSingleton(provider => new AgentRegistry(
     provider.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AgentRegistry>());
 builder.Services.AddHostedService(provider => new AgentAdmin(
-    provider.GetRequiredService<AgentRegistry>(), pipeName, provider.GetRequiredService<ILogger<AgentAdmin>>()));
+    provider.GetRequiredService<AgentRegistry>(), pipeName, provider.GetRequiredService<ILogger<AgentAdmin>>(),
+    provider.GetRequiredService<IHostApplicationLifetime>()));
 var app = builder.Build();
 AgentEndpoints.Map(app, initialWorkspace);
 app.Run();
+
+static StreamWriter OpenBackgroundLog(string stateDirectory)
+{
+    Directory.CreateDirectory(stateDirectory);
+    return new StreamWriter(new FileStream(Path.Combine(stateDirectory, "host.log"),
+        FileMode.Append, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
+}
 
 public partial class Program;

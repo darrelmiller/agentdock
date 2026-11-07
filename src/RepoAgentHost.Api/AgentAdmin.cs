@@ -1,22 +1,27 @@
 using System.IO.Pipes;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
 namespace RepoAgentHost.Api;
 
-public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<AgentAdmin> logger) : BackgroundService
+public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<AgentAdmin> logger,
+    IHostApplicationLifetime lifetime) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     public const string Usage = """
         Usage:
-          rahcli serve [initial-workspace-path]
-          rahcli start <workspace-path> [--id <friendly-id>] [--persona <custom-agent-name>]
-          rahcli stop <friendly-id>
+          rahcli start [initial-workspace-path] [--background]
+          rahcli stop
+          rahcli add <workspace-path> [--id <friendly-id>] [--persona <custom-agent-name>]
+          rahcli remove <friendly-id>
           rahcli list
-        'serve' runs a normal foreground host; Ctrl+C shuts it down. Other commands control that
-        running host for the current user and REPOSITORY_AGENT_PORT (default 5080).
-        A single workspace argument remains supported as an alias for 'serve'.
+        'start' runs the host in the foreground by default; --background detaches it on Windows.
+        'stop' shuts down the host and its agents without removing saved registrations.
+        'add', 'remove', and 'list' manage agents in the running host.
+        Commands target the current user and REPOSITORY_AGENT_PORT (default 5080).
+        'serve' and a single workspace argument remain foreground host aliases.
         """;
 
     public static string PipeName(int port)
@@ -28,15 +33,19 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
 
     public static AdminCommand ParseCommand(string[] args)
     {
-        if (args is ["stop", var stopId])
+        if (args is ["stop"])
         {
-            return new("stop", Id: AgentIds.Validate(stopId));
+            return new("stop");
+        }
+        if (args is ["remove", var removeId])
+        {
+            return new("remove", Id: AgentIds.Validate(removeId));
         }
         if (args is ["list"])
         {
             return new("list");
         }
-        if (args.Length < 2 || args[0] != "start")
+        if (args.Length < 2 || args[0] != "add" || string.IsNullOrWhiteSpace(args[1]) || args[1].StartsWith('-'))
         {
             throw new AgentRegistryException(400, Usage);
         }
@@ -60,7 +69,7 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
                     throw new AgentRegistryException(400, "Unknown or repeated option.\n" + Usage);
             }
         }
-        return new("start", args[1], id, persona);
+        return new("add", args[1], id, persona);
     }
 
     public static async Task<int> RunCommandAsync(string[] args, string pipeName)
@@ -92,20 +101,37 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
             {
                 Console.WriteLine(JsonSerializer.Serialize(reply.Agents, new JsonSerializerOptions(JsonOptions) { WriteIndented = true }));
             }
+            else if (command.Command == "stop")
+            {
+                if (reply.HostProcessId is int processId)
+                {
+                    Process? host;
+                    try { host = Process.GetProcessById(processId); }
+                    catch (ArgumentException) { host = null; }
+                    if (host is not null)
+                    {
+                        using (host)
+                        {
+                            await host.WaitForExitAsync(timeout.Token);
+                        }
+                    }
+                }
+                Console.WriteLine("Stopped the host. Agent registrations and saved sessions were not deleted.");
+            }
             else
             {
-                Console.WriteLine($"Stopped and unregistered agent '{command.Id}'. Its workspace and saved session were not deleted.");
+                Console.WriteLine($"Removed agent '{command.Id}'. Its workspace and saved session were not deleted.");
             }
             return 0;
         }
         catch (TimeoutException)
         {
-            Console.Error.WriteLine("No running host answered. Run 'serve' in another terminal first.");
+            Console.Error.WriteLine("No running host answered. Run 'start' first.");
             return 1;
         }
         catch (OperationCanceledException)
         {
-            Console.Error.WriteLine("The management command timed out. Its outcome is unknown; use 'list' before retrying.");
+            Console.Error.WriteLine("The management command timed out. Its outcome is unknown; check host status before retrying.");
             return 1;
         }
         catch (Exception exception) when (exception is AgentRegistryException or IOException or JsonException or ArgumentException)
@@ -131,9 +157,10 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
                 readTimeout.CancelAfter(TimeSpan.FromSeconds(10));
                 var line = await reader.ReadLineAsync(readTimeout.Token);
                 AdminReply reply;
+                AdminCommand? command = null;
                 try
                 {
-                    var command = JsonSerializer.Deserialize<AdminCommand>(
+                    command = JsonSerializer.Deserialize<AdminCommand>(
                         line ?? throw new JsonException("A management command is required."), JsonOptions)
                         ?? throw new JsonException("A management command is required.");
                     reply = await DispatchAsync(command, stoppingToken);
@@ -148,6 +175,11 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
                     reply = new AdminReply(false, exception.Message);
                 }
                 await writer.WriteLineAsync(JsonSerializer.Serialize(reply, JsonOptions));
+                if (reply.Success && command?.Command == "stop")
+                {
+                    lifetime.StopApplication();
+                    break;
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -168,22 +200,25 @@ public sealed class AgentAdmin(AgentRegistry registry, string pipeName, ILogger<
     {
         switch (command.Command)
         {
-            case "start":
+            case "add":
                 var agent = await registry.AddAsync(new RegisterAgentRequest(
                     command.WorkspacePath ?? throw new AgentRegistryException(400, "A workspace path is required."),
                     command.Id, command.Persona), cancellationToken);
                 return new AdminReply(agent.Status == "ready", agent.Error, [agent]);
-            case "stop":
+            case "remove":
                 await registry.RemoveAsync(AgentIds.Validate(
                     command.Id ?? throw new AgentRegistryException(400, "An agent ID is required.")), cancellationToken);
                 return new AdminReply(true);
+            case "stop" when command.WorkspacePath is null && command.Id is null && command.Persona is null:
+                return new AdminReply(true, HostProcessId: Environment.ProcessId);
             case "list":
-                return new AdminReply(true, Agents: registry.List().ToArray());
+                return new AdminReply(true, Agents: registry.List().ToArray(), HostProcessId: Environment.ProcessId);
             default:
                 throw new AgentRegistryException(400, Usage);
         }
     }
 
     public sealed record AdminCommand(string Command, string? WorkspacePath = null, string? Id = null, string? Persona = null);
-    public sealed record AdminReply(bool Success, string? Error = null, AgentRegistrationView[]? Agents = null);
+    public sealed record AdminReply(bool Success, string? Error = null, AgentRegistrationView[]? Agents = null,
+        int? HostProcessId = null);
 }

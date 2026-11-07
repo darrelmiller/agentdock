@@ -18,7 +18,7 @@ identity. The backing storage is not part of the public agent interface.
 
 | Tool | Responsibility |
 |---|---|
-| `rahcli` | Run the host and start, list, or stop its agents |
+| `rahcli` | Start/stop the host and add, list, or remove its agents |
 | `ai-catalog` | Discover agents and obtain their card URLs |
 | `a2a` | Inspect cards, send messages, and fetch or cancel tracked tasks |
 
@@ -128,16 +128,19 @@ unrelated A2A client or invent flags when a command fails.
 Start a normal foreground host in one terminal:
 
 ```powershell
-rahcli serve
+rahcli start
 ```
 
-`serve` restores saved registrations, or starts with an empty catalog on first run. An optional
-`rahcli serve "C:\agents\portfolio"` seeds a new registry. The single-path form remains an
+`start` restores saved registrations, or starts with an empty catalog on first run. An optional
+`rahcli start "C:\agents\portfolio"` seeds a new registry. The single-path form remains an
 alias for that seeded form. Subsequent starts reload saved registrations without resurrecting
-agents previously stopped. With no initial path there is no root/default A2A agent: discover through
+agents previously removed. With no initial path there is no root/default A2A agent: discover through
 `/catalog` and use `/agents/{id}`; never assume the first catalog entry is a default agent.
 
-Leave the terminal running. Ctrl+C shuts down the host and all its agents. Do not register a
+Leave the terminal running. Ctrl+C or `rahcli stop` shuts down the host and all its agents while
+preserving registrations and saved sessions. `rahcli start --background` detaches the host on
+Windows and appends logs to `host.log` in its state directory. `serve` remains a foreground alias.
+Do not register a
 Windows Service, scheduled task, or auto-start mechanism unless explicitly requested. From an
 agent harness, use its supported long-lived process/terminal mechanism and verify
 `http://127.0.0.1:5080/healthz` responds before claiming readiness.
@@ -145,16 +148,16 @@ agent harness, use its supported long-lived process/terminal mechanism and verif
 In another terminal:
 
 ```powershell
-rahcli start "C:\agents\ai-catalog"
-rahcli start "C:\other\portfolio" --id another-portfolio
-rahcli start "C:\agents\assistant" --id assistant --persona margo
+rahcli add "C:\agents\ai-catalog"
+rahcli add "C:\other\portfolio" --id another-portfolio
+rahcli add "C:\agents\assistant" --id assistant --persona margo
 rahcli list
-rahcli stop another-portfolio
+rahcli remove another-portfolio
 ```
 
-`start` registers/starts an agent in an **already running host**, not a new process or OS service.
-`stop` targets an **agent ID**, cancels/joins its outstanding A2A work, and unregisters it.
-It does not delete the workspace or saved session. Obtain specific approval before stopping an
+`add` registers an agent in an **already running host**. `remove` targets an **agent ID**,
+cancels/joins its outstanding A2A work, and unregisters it.
+It does not delete the workspace or saved session. Obtain specific approval before removing an
 agent that may have active work. Re-registering the same ID and workspace resumes its session.
 
 Registration starts no Copilot process and loads no session. RepoAgentHost lazily starts **one shared
@@ -167,8 +170,8 @@ pools are not implemented. A shared runtime failure affects all agents; report e
 assuming automatic failover or starting replacement conversations.
 
 `list` returns JSON with `id`, `workspacePath`, `status`, `error`, and `cardUrl`. Failed agents
-remain visible for diagnosis but are excluded from discovery; fix the error, then stop and
-re-register to retry. If a management command times out after connecting, its outcome is unknown:
+remain visible for diagnosis but are excluded from discovery; fix the error, then remove and
+re-add to retry. If a management command times out after connecting, its outcome is unknown:
 run `list` before retrying rather than creating duplicate registrations.
 
 ### IDs and configuration
@@ -182,7 +185,7 @@ No definition is copied into the workspace.
 Because runtime startup is lazy, persona availability is checked on first work. An unknown or
 disabled name fails explicitly; do not claim registration success verifies persona availability.
 Selection is session-scoped, reapplied on resume and `/new-session`, and never changes peer agents.
-Stop/re-register the same ID and workspace to change the persona; saved history is preserved.
+Remove/re-add the same ID and workspace to change the persona; saved history is preserved.
 Only send `/new-session` on explicit user instruction when fresh history is wanted.
 
 The persona does not grant access to private Margo memory, app session history, or external tools
@@ -205,7 +208,7 @@ Set configuration before starting the host:
 ```powershell
 $env:REPOSITORY_AGENT_PORT = "5081"
 $env:REPOAGENT_ALLOWED_ROOTS = "C:\agents;D:\knowledge"
-rahcli serve
+rahcli start
 ```
 
 Set the same port in the control-command terminal. Current workspaces must be local Git

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Hosting;
+using System.IO.Pipes;
 
 namespace RepoAgentHost.Api.Tests;
 
@@ -291,8 +293,8 @@ public sealed class AgentRegistryTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("start", "workspace", "--persona", "margo", "--id", "assistant")]
-    [InlineData("start", "workspace", "--id", "assistant", "--persona", "margo")]
+    [InlineData("add", "workspace", "--persona", "margo", "--id", "assistant")]
+    [InlineData("add", "workspace", "--id", "assistant", "--persona", "margo")]
     public void PersonaAndFriendlyIdOptionsWorkInEitherOrder(params string[] arguments)
     {
         var command = AgentAdmin.ParseCommand(arguments);
@@ -302,29 +304,121 @@ public sealed class AgentRegistryTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("start", "workspace", "--persona")]
-    [InlineData("start", "workspace", "--persona", "margo", "--persona", "margo")]
-    [InlineData("start", "workspace", "--persona", "")]
-    [InlineData("start", "workspace", "--persona", "..\\margo.agent.md")]
+    [InlineData("add", "workspace", "--persona")]
+    [InlineData("add", "workspace", "--persona", "margo", "--persona", "margo")]
+    [InlineData("add", "workspace", "--persona", "")]
+    [InlineData("add", "workspace", "--persona", "..\\margo.agent.md")]
     public void InvalidPersonaArgumentsAreRejected(params string[] arguments)
     {
         Assert.Throws<AgentRegistryException>(() => AgentAdmin.ParseCommand(arguments));
     }
 
     [Fact]
-    public async Task CliCommandsStartListAndStopWithoutAWindowsService()
+    public async Task CliCommandsAddListAndRemoveAgentsWithoutStoppingTheHost()
     {
         var registry = CreateRegistry();
         await registry.StartAsync(CancellationToken.None);
-        using var admin = new AgentAdmin(registry, "unused", NullLogger<AgentAdmin>.Instance);
-        var command = AgentAdmin.ParseCommand(["start", CreateWorkspace("New Agent"), "--id", "friendly"]);
+        using var lifetime = new FakeLifetime();
+        using var admin = new AgentAdmin(registry, "unused", NullLogger<AgentAdmin>.Instance, lifetime);
+        var command = AgentAdmin.ParseCommand(["add", CreateWorkspace("New Agent"), "--id", "friendly"]);
         Assert.True((await admin.DispatchAsync(command, CancellationToken.None)).Success);
         var list = await admin.DispatchAsync(AgentAdmin.ParseCommand(["list"]), CancellationToken.None);
         Assert.Equal(2, list.Agents!.Length);
-        await admin.DispatchAsync(AgentAdmin.ParseCommand(["stop", "friendly"]), CancellationToken.None);
+        await admin.DispatchAsync(AgentAdmin.ParseCommand(["remove", "friendly"]), CancellationToken.None);
         Assert.Equal("portfolio", Assert.Single(registry.List()).Id);
         Assert.True(Directory.Exists(command.WorkspacePath));
         Assert.True(_runtimes["friendly"].Disposed);
+        Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
+    }
+
+    [Theory]
+    [InlineData("start", "workspace")]
+    [InlineData("stop", "portfolio")]
+    [InlineData("remove")]
+    [InlineData("add")]
+    [InlineData("add", "--background")]
+    public void OldAgentCommandsAndIncompleteRegistrationCommandsAreRejected(params string[] arguments)
+    {
+        Assert.Throws<AgentRegistryException>(() => AgentAdmin.ParseCommand(arguments));
+    }
+
+    [Theory]
+    [InlineData("start")]
+    [InlineData("serve")]
+    [InlineData("start", "workspace")]
+    public void HostStartsInForegroundByDefault(params string[] arguments)
+    {
+        var start = HostCommands.ParseStart(arguments);
+        Assert.False(start.Background);
+        Assert.Equal(arguments.Length == 2 ? Path.GetFullPath("workspace") : null, start.WorkspacePath);
+    }
+
+    [Theory]
+    [InlineData("start", "--background", "workspace")]
+    [InlineData("start", "workspace", "--background")]
+    public void BackgroundSwitchAndWorkspaceWorkInEitherOrder(params string[] arguments)
+    {
+        var start = HostCommands.ParseStart(arguments);
+        Assert.True(start.Background);
+        Assert.Equal(Path.GetFullPath("workspace"), start.WorkspacePath);
+    }
+
+    [Theory]
+    [InlineData("start", "--background", "--background")]
+    [InlineData("start", "workspace", "--id", "agent")]
+    [InlineData("start", "workspace", "--persona", "margo")]
+    [InlineData("start", "one", "two")]
+    [InlineData("start", "")]
+    [InlineData("serve", "--background")]
+    public void InvalidHostStartArgumentsAreRejected(params string[] arguments)
+    {
+        Assert.Throws<AgentRegistryException>(() => HostCommands.ParseStart(arguments));
+    }
+
+    [Fact]
+    public async Task HostStopRepliesBeforeRequestingShutdownAndPreservesRegistrations()
+    {
+        var registry = CreateRegistry();
+        await registry.StartAsync(CancellationToken.None);
+        using var lifetime = new FakeLifetime();
+        var pipeName = "RepoAgentHost-test-" + Guid.NewGuid().ToString("N");
+        using var admin = new AgentAdmin(registry, pipeName, NullLogger<AgentAdmin>.Instance, lifetime);
+        await admin.StartAsync(CancellationToken.None);
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut,
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            await pipe.ConnectAsync(timeout.Token);
+            using var reader = new StreamReader(pipe, leaveOpen: true);
+            using var writer = new StreamWriter(pipe, leaveOpen: true) { AutoFlush = true };
+            await writer.WriteLineAsync("""{"command":"stop"}""");
+            var reply = JsonSerializer.Deserialize<AgentAdmin.AdminReply>(
+                (await reader.ReadLineAsync(timeout.Token))!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            Assert.True(reply!.Success);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                Task.Delay(Timeout.InfiniteTimeSpan, lifetime.ApplicationStopping).WaitAsync(timeout.Token));
+            Assert.True(lifetime.ApplicationStopping.IsCancellationRequested);
+            Assert.Equal("portfolio", Assert.Single(registry.List()).Id);
+            await registry.DisposeAsync();
+            var restarted = CreateRegistry();
+            await restarted.StartAsync(CancellationToken.None);
+            Assert.Equal("portfolio", Assert.Single(restarted.List()).Id);
+        }
+        finally
+        {
+            await admin.StopAsync(CancellationToken.None);
+        }
+    }
+
+    private sealed class FakeLifetime : IHostApplicationLifetime, IDisposable
+    {
+        private readonly CancellationTokenSource _stopping = new();
+        public CancellationToken ApplicationStarted => CancellationToken.None;
+        public CancellationToken ApplicationStopping => _stopping.Token;
+        public CancellationToken ApplicationStopped => CancellationToken.None;
+        public void StopApplication() => _stopping.Cancel();
+        public void Dispose() => _stopping.Dispose();
     }
 
     private static SendMessageRequest Request(string text, string context) => new()

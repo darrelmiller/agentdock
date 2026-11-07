@@ -41,7 +41,7 @@ var start = new ProcessStartInfo(hostPath)
     RedirectStandardOutput = true,
     RedirectStandardError = true
 };
-start.ArgumentList.Add("serve");
+start.ArgumentList.Add("start");
 start.Environment["REPOSITORY_AGENT_PORT"] = port.ToString();
 start.Environment["REPOAGENT_STATE_DIRECTORY"] = Path.Combine(stateDirectory, "host");
 using var host = Process.Start(start) ?? throw new InvalidOperationException("Could not start the installed host.");

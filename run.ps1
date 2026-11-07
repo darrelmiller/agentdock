@@ -1,17 +1,27 @@
 param(
     [string]$RepositoryPath,
-    [ValidateSet("serve", "start", "stop", "list")]
-    [string]$Command = "serve",
+    [ValidateSet("serve", "start", "stop", "add", "remove", "list")]
+    [string]$Command = "start",
     [string]$AgentId,
-    [string]$Persona
+    [string]$Persona,
+    [switch]$Background
 )
 
 $ErrorActionPreference = "Stop"
 
 $resolvedRepositoryPath = if ($RepositoryPath) { [System.IO.Path]::GetFullPath($RepositoryPath) } else { $null }
 $projectPath = Join-Path $PSScriptRoot "src\RepoAgentHost.Api\RepoAgentHost.Api.csproj"
-if ($Persona -and $Command -ne "start") {
-    throw "-Persona applies to -Command start. Register the persona after starting the host."
+if ($Persona -and $Command -ne "add") {
+    throw "-Persona applies to -Command add."
+}
+if ($Background -and $Command -ne "start") {
+    throw "-Background applies to -Command start."
+}
+if ($AgentId -and $Command -notin @("add", "remove")) {
+    throw "-AgentId applies to -Command add or remove."
+}
+if ($resolvedRepositoryPath -and $Command -notin @("start", "serve", "add")) {
+    throw "-RepositoryPath applies to -Command start, serve, or add."
 }
 
 $cliArguments = switch ($Command) {
@@ -20,15 +30,22 @@ $cliArguments = switch ($Command) {
         else { @("serve") }
     }
     "start" {
+        $startArguments = @("start")
+        if ($resolvedRepositoryPath) { $startArguments += $resolvedRepositoryPath }
+        if ($Background) { $startArguments += "--background" }
+        $startArguments
+    }
+    "add" {
         if (-not $resolvedRepositoryPath) { throw "Pass -RepositoryPath when registering an agent." }
-        $startArguments = @("start", $resolvedRepositoryPath)
+        $startArguments = @("add", $resolvedRepositoryPath)
         if ($AgentId) { $startArguments += @("--id", $AgentId) }
         if ($Persona) { $startArguments += @("--persona", $Persona) }
         $startArguments
     }
-    "stop" {
-        if (-not $AgentId) { throw "Pass -AgentId when stopping an agent." }
-        @("stop", $AgentId)
+    "stop" { @("stop") }
+    "remove" {
+        if (-not $AgentId) { throw "Pass -AgentId when removing an agent." }
+        @("remove", $AgentId)
     }
     "list" { @("list") }
 }

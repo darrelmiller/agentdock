@@ -16,17 +16,20 @@ receiving-session continuity. Git is the current workspace provider, not the pub
 
 ## Registration and host lifetime
 
-`rahcli serve` restores the persisted registry or initializes an empty one. An optional workspace
-argument seeds a new registry only. The process runs in the foreground; no OS service is installed.
+`rahcli start` restores the persisted registry or initializes an empty one. An optional workspace
+argument seeds a new registry only. The process runs in the foreground by default; `--background`
+detaches it on Windows and writes `host.log` in the state directory. No OS service is installed.
+`serve` remains a foreground alias. `stop` shuts down the host and all agents without removing
+their saved registrations or sessions.
 
-`start <workspace> [--id <id>] [--persona <name>]`, `list`, and `stop <id>` control the running host
+`add <workspace> [--id <id>] [--persona <name>]`, `list`, `remove <id>`, and `stop` control the running host
 through a same-user named pipe. Registrations persist independently of process lifetime.
 The workspace basename supplies a default lowercase hyphen-separated ID. Duplicate IDs or workspace
 paths are rejected. Explicit IDs contain 1-64 lowercase ASCII letters/digits separated by single
 hyphens. A persona name is optional and selects a native SDK custom agent; availability is checked
 before inference on first work. Missing personas fail explicitly.
 
-`stop` cancels and joins outstanding A2A work, unregisters the agent, and disposes its session.
+`remove` cancels and joins outstanding A2A work, unregisters the agent, and disposes its session.
 It does not delete workspace files or saved session state. Restart does not restore removed
 registrations. Failed registrations are visible to management but excluded from the public catalog.
 
@@ -46,7 +49,7 @@ the persisted host identity and agent ID. Cards take descriptive identity from w
 `.agent/agent-profile.json`, then README fallback. Descriptive identity, registration ID, selected
 persona, and session ID are distinct.
 
-Root A2A aliases exist only when an initial workspace is explicitly provided to `serve`.
+Root A2A aliases exist only when an initial workspace is explicitly provided to `start` or `serve`.
 Without one, callers discover through the catalog; no default is inferred from list order.
 
 ## Message, task, and session semantics

@@ -222,7 +222,8 @@ public sealed class AgentRegistry : IHostedService, IAsyncDisposable
             await runtime.StartAsync(cancellationToken);
             agent.Runtime = runtime;
             agent.Card = card;
-            agent.Server = new A2AServer(new RepositoryAgentHandler(runtime), new InMemoryTaskStore(),
+            agent.Server = new A2AServer(new RepositoryAgentHandler(runtime,
+                _loggerFactory.CreateLogger<RepositoryAgentHandler>()), new InMemoryTaskStore(),
                 new ChannelEventNotifier(), _loggerFactory.CreateLogger<A2AServer>(),
                 new A2AServerOptions { SupportsStreaming = true });
             agent.Status = "ready";
